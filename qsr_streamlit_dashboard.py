@@ -384,7 +384,7 @@ def main():
         unsafe_allow_html=True
     )
     st.sidebar.caption(
-        "💡 We recommend setting these values to the values inputted below in section *Cost structure – year 1 (% of monthly revenue)*"
+        "💡 We recommend setting these values to the values inputted below in section **Cost structure – year 1 (% of monthly revenue)**"
     )
     cogs_target = st.sidebar.slider("COGS target percent of revenue", 0.10, 0.60, 0.34, 0.01)
     labor_target = st.sidebar.slider("Labor target percent of revenue", 0.10, 0.50, 0.24, 0.01)
