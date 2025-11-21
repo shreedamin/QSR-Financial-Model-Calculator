@@ -170,10 +170,20 @@ def compute_5yr_projection(
     gross_list = np.array(gross_list)
     cumulative = profit_list.cumsum()
 
-    # Find payback month (first month cumulative >= investment)
+    # Find minimum cumulative profit (maximum loss)
+    min_cumulative = np.min(cumulative) if len(cumulative) > 0 else 0
+    
+    # Calculate adjusted investment: initial investment + cumulative losses (if any)
+    # If cumulative goes negative, we need to recoup both the investment and the losses
+    if min_cumulative < 0:
+        adjusted_investment = investment + abs(min_cumulative)
+    else:
+        adjusted_investment = investment
+    
+    # Find payback month (first month cumulative >= adjusted investment)
     payback_month = None
     for i, val in enumerate(cumulative):
-        if val >= investment:
+        if val >= adjusted_investment:
             payback_month = int(i + 1)
             break
 
@@ -197,7 +207,8 @@ def compute_5yr_projection(
             "Investment": investment,
         }
     )
-    return df, payback_month
+    cumulative_losses = abs(min_cumulative) if min_cumulative < 0 else 0.0
+    return df, payback_month, adjusted_investment, cumulative_losses
 
 
 def scenario_curve_static(
@@ -338,7 +349,8 @@ def main():
 
     st.write(
         "All business metrics shown are **per month** or **per year** unless otherwise stated.\n\n"
-        "*Are you accessing this from a mobile browser? Use the menu button in the upper left to access the adjustment toolbar.*\n"
+        "*Are you accessing this from a mobile browser? Use the menu button in the upper left to access the adjustment toolbar.*\n\n"
+        "**Key Features:**\n"
         "- Revenue, COGS, labor, other OpEx, rent, profit and investor splits are **monthly**.\n"
         "- Inflation inputs are **annual % increases** on ticket price, cost percentages, rent, and misc expenses.\n"
         "- Daily orders ramp from a starting value to a target over a chosen number of months, "
@@ -351,8 +363,13 @@ def main():
         "- Labor is modeled as the **maximum of** a percentage-of-revenue target and a **minimum staffing floor** "
         "(actual employee headcount × hourly rate × burden multiplier × hours per employee per week × 4.33).\n"
         "- Ticket price inflates annually but is capped by a configurable **Max Ticket Price**.\n"
-        "- Targets for COGS, Labor, Occupancy (Rent) and Other OpEx are adjustable and used for color coding. "
-        "Net Profit is color-coded: green for positive, red for negative."
+        "- **Performance targets** for COGS, Labor, Occupancy (Rent) and Other OpEx are adjustable in the sidebar "
+        "and used for color coding. Net Profit is color-coded: green for positive, red for negative.\n"
+        "- **Payback calculation** accounts for cumulative losses: if the business operates at a loss in early years, "
+        "those losses are added to the initial investment to determine the true payback period (when cumulative profit "
+        "exceeds initial investment + cumulative losses).\n"
+        "- **Monthly Breakdown table** shows individual cost components (Rent, Labor, COGS, Other OpEx), order metrics "
+        "(Daily, Weekly, Monthly Orders), and financial metrics (Revenue, Net Revenue) for months 1-120."
     )
 
     # ----- Sidebar: Core Inputs -----
@@ -563,7 +580,7 @@ def main():
     )
 
     # ----- Core 10-year projection using ramp + real rent + real labor -----
-    df_5yr, payback_month_5yr = compute_5yr_projection(
+    df_5yr, payback_month_5yr, adjusted_investment_5yr, cumulative_losses_5yr = compute_5yr_projection(
         start_orders,
         target_orders,
         int(ramp_months),
@@ -699,10 +716,14 @@ def main():
         help="Monthly revenue at the end of the ramp period (target daily orders plus any ticket inflation).",
     )
     if payback_month_5yr is not None:
+        if cumulative_losses_5yr > 0:
+            help_text = f"First month where cumulative profit exceeds adjusted investment (${investment:,.0f} initial + ${cumulative_losses_5yr:,.0f} cumulative losses = ${adjusted_investment_5yr:,.0f} total)."
+        else:
+            help_text = f"First month where cumulative profit exceeds total investment (${investment:,.0f})."
         col3.metric(
             "Payback (Months, ramp + real rent + real labor)",
             f"{payback_month_5yr:.1f}",
-            help="First month where cumulative profit exceeds total investment.",
+            help=help_text,
         )
     else:
         col3.metric("Payback (Months, ramp + real rent + real labor)", "N/A")
@@ -1315,10 +1336,20 @@ def main():
         st.markdown("### 10-Year Cumulative Profit vs Investment (Monthly Profit)")
 
         if payback_month_5yr is not None:
-            st.write(
-                f"Estimated **payback month**: **Month {payback_month_5yr}** "
-                f"(~{payback_month_5yr/12:.1f} years)."
-            )
+            if cumulative_losses_5yr > 0:
+                st.write(
+                    f"Estimated **payback month**: **Month {payback_month_5yr}** "
+                    f"(~{payback_month_5yr/12:.1f} years).\n\n"
+                    f"**Investment breakdown:**\n"
+                    f"- Initial investment: ${investment:,.0f}\n"
+                    f"- Cumulative losses: ${cumulative_losses_5yr:,.0f}\n"
+                    f"- **Total to recoup: ${adjusted_investment_5yr:,.0f}**"
+                )
+            else:
+                st.write(
+                    f"Estimated **payback month**: **Month {payback_month_5yr}** "
+                    f"(~{payback_month_5yr/12:.1f} years)."
+                )
         else:
             st.write(
                 "Under the current assumptions, cumulative profit does **not** reach the total investment within 10 years."
