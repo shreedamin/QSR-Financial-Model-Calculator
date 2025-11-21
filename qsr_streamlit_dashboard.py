@@ -884,6 +884,7 @@ def main():
     st.markdown("#### Detailed Breakdown")
     comparison_df = pd.DataFrame({
         "Metric": [
+            "Headcount per shift",
             "Actual employee headcount",
             "Calculated recommended headcount",
             "Total store hours per week",
@@ -893,6 +894,7 @@ def main():
             "Total actual employee cost per month per actual inputed headcount",
         ],
         "Value": [
+            f"{employees_per_shift} employees",
             f"{actual_employees} employees",
             f"{min_employees_calculated} employees",
             f"{total_store_hours_per_week:.1f} hours",
@@ -909,17 +911,20 @@ def main():
     months_1_120 = df_5yr[df_5yr["Month"] <= 120].copy()
     months_1_120["Monthly Orders"] = months_1_120["Daily Orders"] * days_per_month
     months_1_120["Weekly Orders"] = months_1_120["Daily Orders"] * 7
-    monthly_breakdown_df = months_1_120[["Month", "Rent (Monthly)", "Monthly Revenue", "Monthly Profit", "Daily Orders", "Weekly Orders", "Monthly Orders"]].copy()
-    monthly_breakdown_df.columns = ["Month", "Occupancy ($)", "Revenue ($)", "Net Revenue ($)", "Daily Orders", "Weekly Orders", "Monthly Orders"]
+    monthly_breakdown_df = months_1_120[["Month", "Rent (Monthly)", "Labor (Monthly)", "COGS (Monthly)", "Other OpEx (Monthly)", "Daily Orders", "Weekly Orders", "Monthly Orders", "Monthly Revenue", "Monthly Profit"]].copy()
+    monthly_breakdown_df.columns = ["Month", "Rent ($)", "Labor ($)", "COGS ($)", "Other OpEx ($)", "Daily Orders", "Weekly Orders", "Monthly Orders", "Revenue ($)", "Net Revenue ($)"]
     st.dataframe(
         monthly_breakdown_df.style.format(
             {
-                "Occupancy ($)": "${:,.0f}",
-                "Revenue ($)": "${:,.0f}",
-                "Net Revenue ($)": "${:,.0f}",
+                "Rent ($)": "${:,.0f}",
+                "Labor ($)": "${:,.0f}",
+                "COGS ($)": "${:,.0f}",
+                "Other OpEx ($)": "${:,.0f}",
                 "Daily Orders": "{:,.1f}",
                 "Weekly Orders": "{:,.1f}",
                 "Monthly Orders": "{:,.0f}",
+                "Revenue ($)": "${:,.0f}",
+                "Net Revenue ($)": "${:,.0f}",
             }
         ),
         use_container_width=True,
@@ -934,12 +939,12 @@ def main():
         "Metric": [
             "Revenue",
             "COGS",
+            "Gross Profit",
             "Labor (Budgeted)",
             "Labor (Actual)",
             "Other OpEx",
             "Rent (Budgeted)",
             "Rent (Actual)",
-            "Gross Profit",
             "Net Profit",
         ]
     }
@@ -956,12 +961,12 @@ def main():
             comp_data[f"Year {year}"] = [
                 avg_revenue,
                 float(year_data["Avg COGS (Monthly)"].iloc[0]),
+                float(year_data["Avg Monthly Gross Profit"].iloc[0]),
                 float(year_data["Avg Labor (Target)"].iloc[0]),
                 float(year_data["Avg Labor (Actual)"].iloc[0]),
                 float(year_data["Avg Other OpEx (Monthly)"].iloc[0]),
                 rent_budgeted,
                 float(year_data["Avg Rent (Monthly)"].iloc[0]),
-                float(year_data["Avg Monthly Gross Profit"].iloc[0]),
                 float(year_data["Avg Monthly Net Profit"].iloc[0]),
             ]
             format_dict[f"Year {year}"] = "{:,.0f}"
@@ -977,18 +982,18 @@ def main():
         """Apply color coding to Labor (Target), Labor (Actual), Rent (Actual), and Net Profit rows"""
         colors = [''] * len(row)
         
-        # Find row indices
-        # 0: Revenue, 1: COGS, 2: Labor (Budgeted), 3: Labor (Actual), 4: Other OpEx, 
-        # 5: Rent (Budgeted), 6: Rent (Actual), 7: Gross Profit, 8: Net Profit
+        # Find row indices (updated order)
+        # 0: Revenue, 1: COGS, 2: Gross Profit, 3: Labor (Budgeted), 4: Labor (Actual), 
+        # 5: Other OpEx, 6: Rent (Budgeted), 7: Rent (Actual), 8: Net Profit
         
-        if row.name == 2:  # Labor (Budgeted) row
+        if row.name == 3:  # Labor (Budgeted) row
             return [''] * len(row)  # No color for budgeted row
-        elif row.name == 3:  # Labor (Actual) row
+        elif row.name == 4:  # Labor (Actual) row
             # Compare Actual vs Budgeted for each year column
             for i, col in enumerate(comp_df.columns):
                 if col.startswith('Year '):
                     try:
-                        budgeted_idx = 2  # Labor (Budgeted) row index
+                        budgeted_idx = 3  # Labor (Budgeted) row index
                         actual_val = row[col]
                         target_val = comp_df.loc[budgeted_idx, col]
                         
@@ -1005,14 +1010,14 @@ def main():
                     except (ValueError, TypeError, KeyError):
                         pass
             return colors
-        elif row.name == 5:  # Rent (Budgeted) row
+        elif row.name == 6:  # Rent (Budgeted) row
             return [''] * len(row)  # No color for budgeted row
-        elif row.name == 6:  # Rent (Actual) row
+        elif row.name == 7:  # Rent (Actual) row
             # Compare Actual Rent vs Budgeted Rent for each year column
             for i, col in enumerate(comp_df.columns):
                 if col.startswith('Year '):
                     try:
-                        budgeted_idx = 5  # Rent (Budgeted) row index
+                        budgeted_idx = 6  # Rent (Budgeted) row index
                         actual_rent = row[col]
                         budgeted_rent = comp_df.loc[budgeted_idx, col]
                         
