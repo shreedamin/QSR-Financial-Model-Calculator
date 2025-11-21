@@ -140,10 +140,10 @@ def compute_5yr_projection(
         # Add misc expenses to other OpEx
         other = other + misc_expenses
 
-        # Labor: max(percentage-based, staffing floor with inflation)
-        pct_labor_cost = revenue * labor_pct * l_factor  # Target spend
+        # Labor: actual cost based on employee headcount (staffing floor)
+        pct_labor_cost = revenue * labor_pct * l_factor  # Target spend (budget guideline)
         min_labor_cost_y = base_min_labor * (1 + labor_infl) ** year_idx  # Actual spend (staffing floor)
-        labor = max(pct_labor_cost, min_labor_cost_y)  # Used for profit calculation
+        labor = min_labor_cost_y  # Actual labor cost is determined by employee headcount
 
         # Rent with inflation
         rent = rent_month_y1 * rent_factor
@@ -256,9 +256,9 @@ def scenario_curve_static(
 
         cogs_y1 = revenue_y1 * cogs_pct
         other_y1 = revenue_y1 * other_pct
-        pct_labor_y1 = revenue_y1 * labor_pct
+        pct_labor_y1 = revenue_y1 * labor_pct  # Target spend (budget guideline)
         min_labor_y1 = base_min_labor
-        labor_y1 = max(pct_labor_y1, min_labor_y1)
+        labor_y1 = min_labor_y1  # Actual labor cost is determined by employee headcount
         rent_y1 = rent_month_y1
         profit_y1 = revenue_y1 - (cogs_y1 + labor_y1 + other_y1 + rent_y1)
 
@@ -269,9 +269,9 @@ def scenario_curve_static(
 
         cogs_y2 = revenue_y2 * (cogs_pct * (1 + cogs_infl))
         other_y2 = revenue_y2 * (other_pct * (1 + other_infl))
-        pct_labor_y2 = revenue_y2 * (labor_pct * (1 + labor_infl))
+        pct_labor_y2 = revenue_y2 * (labor_pct * (1 + labor_infl))  # Target spend (budget guideline)
         min_labor_y2 = base_min_labor * (1 + labor_infl)
-        labor_y2 = max(pct_labor_y2, min_labor_y2)
+        labor_y2 = min_labor_y2  # Actual labor cost is determined by employee headcount
         rent_y2 = rent_month_y1 * (1 + rent_infl)
         profit_y2 = revenue_y2 - (cogs_y2 + labor_y2 + other_y2 + rent_y2)
 
@@ -282,9 +282,9 @@ def scenario_curve_static(
 
         cogs_y3 = revenue_y3 * (cogs_pct * (1 + cogs_infl) ** 2)
         other_y3 = revenue_y3 * (other_pct * (1 + other_infl) ** 2)
-        pct_labor_y3 = revenue_y3 * (labor_pct * (1 + labor_infl) ** 2)
+        pct_labor_y3 = revenue_y3 * (labor_pct * (1 + labor_infl) ** 2)  # Target spend (budget guideline)
         min_labor_y3 = base_min_labor * (1 + labor_infl) ** 2
-        labor_y3 = max(pct_labor_y3, min_labor_y3)
+        labor_y3 = min_labor_y3  # Actual labor cost is determined by employee headcount
         rent_y3 = rent_month_y1 * (1 + rent_infl) ** 2
         profit_y3 = revenue_y3 - (cogs_y3 + labor_y3 + other_y3 + rent_y3)
 
@@ -360,8 +360,8 @@ def main():
         "with annual inflation applied.\n"
         "- **Recommended headcount calculator** helps determine minimum staffing needs based on store operating hours "
         "and employees per shift (assumes 34 hours per employee per week).\n"
-        "- **Labor cost** is modeled as the **maximum of** a percentage-of-revenue target and a **minimum staffing floor**. "
-        "The staffing floor is calculated as: actual employee headcount × hourly rate × burden multiplier × hours per employee per month.\n"
+        "- **Labor cost** is determined by your actual employee headcount (not a percentage target). "
+        "The percentage-of-revenue target is a budget guideline for maximum labor spending, but your actual labor cost is: actual employee headcount × hourly rate × burden multiplier × hours per employee per month.\n"
         "- Ticket price inflates annually but is capped by a configurable **Max Ticket Price**.\n"
         "- **Performance targets** for COGS, Labor, Occupancy (Rent) and Other OpEx are adjustable in the sidebar "
         "and used for color coding. Net Profit is color-coded: green for positive, red for negative.\n"
@@ -1307,8 +1307,8 @@ def main():
     st.caption(
         "All profit and split numbers above are **per month**, not per year. "
         "Rent is modeled as a fixed monthly dollar amount with annual inflation. "
-        "Labor cost (Labor column) is the maximum of a percentage-of-revenue target and a minimum staffing floor. "
-        "The staffing floor is: actual employee headcount × hourly rate × burden multiplier × hours per employee per month. "
+        "Labor cost (Labor column) is determined by your actual employee headcount. "
+        "The percentage-of-revenue target is a budget guideline for maximum labor spending, but your actual labor cost is: actual employee headcount × hourly rate × burden multiplier × hours per employee per month. "
         "Occupancy % is computed as Rent ÷ Revenue; Labor % (Actual) is Labor cost ÷ Revenue. "
         "Color coding is based on your adjustable targets in the sidebar."
     )
