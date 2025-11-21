@@ -1307,8 +1307,8 @@ def main():
     st.caption(
         "All profit and split numbers above are **per month**, not per year. "
         "Rent is modeled as a fixed monthly dollar amount with annual inflation. "
-        "Labor cost (Labor column) is determined by your actual employee headcount. "
-        "The percentage-of-revenue target is a budget guideline for maximum labor spending, but your actual labor cost is: actual employee headcount × hourly rate × burden multiplier × hours per employee per month. "
+        "Labor cost (Labor Actual) is determined by your actual employee headcount. "
+        "Labor cost (Budgeted) is a budget guideline for maximum labor spending, but your actual labor cost is: actual employee headcount × hourly rate × burden multiplier × hours per employee per month. "
         "Occupancy % is computed as Rent ÷ Revenue; Labor % (Actual) is Labor cost ÷ Revenue. "
         "Color coding is based on your adjustable targets in the sidebar."
     )
