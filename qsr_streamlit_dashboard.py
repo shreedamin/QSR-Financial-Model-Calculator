@@ -1305,42 +1305,6 @@ def main():
         ax_ramp.set_title("Daily Orders Over 10 Years (Ramp + Post-Ramp Growth)")
         st.pyplot(fig_ramp)
 
-        st.markdown("### Year-by-Year Average Monthly Metrics (with Dollar Costs)")
-        st.dataframe(
-            df_year_summary.style.format(
-                {
-                    "Avg Daily Orders": "{:,.1f}",
-                    "Avg Monthly Revenue": "{:,.0f}",
-                    "Avg COGS (Monthly)": "{:,.0f}",
-                    "Avg Labor (Monthly)": "{:,.0f}",
-                    "Avg Other OpEx (Monthly)": "{:,.0f}",
-                    "Avg Rent (Monthly)": "{:,.0f}",
-                    "Avg Monthly Net Profit": "{:,.0f}",
-                    "Avg Monthly Gross Profit": "{:,.0f}",
-                    "Avg Occupancy % (Rent/Revenue)": "{:.2%}",
-                    "Avg Labor % (Actual)": "{:.2%}",
-                }
-            )
-        )
-
-        st.markdown("#### Year 1 Average Monthly Cost & Profit Breakdown")
-        y1_rows = df_5yr[df_5yr["Year"] == 1]
-        if not y1_rows.empty:
-            avg_cogs_y1 = float(y1_rows["COGS (Monthly)"].mean())
-            avg_labor_y1 = float(y1_rows["Labor (Monthly)"].mean())
-            avg_other_y1 = float(y1_rows["Other OpEx (Monthly)"].mean())
-            avg_rent_y1 = float(y1_rows["Rent (Monthly)"].mean())
-            avg_profit_y1 = float(y1_rows["Monthly Profit"].mean())
-
-            fig_y1, ax_y1 = plt.subplots()
-            labels = ["COGS", "Labor", "Other OpEx", "Rent", "Net Profit"]
-            values = [avg_cogs_y1, avg_labor_y1, avg_other_y1, avg_rent_y1, avg_profit_y1]
-            ax_y1.bar(labels, values)
-            ax_y1.set_ylabel("Dollars per Month")
-            ax_y1.set_title("Year 1 Average Monthly Cost & Profit Breakdown")
-            plt.xticks(rotation=30)
-            st.pyplot(fig_y1)
-
     # ---- Tab 2: 10-Year Projection (Monthly) ----
     with tab2:
         st.markdown("### 10-Year Cumulative Profit vs Investment (Monthly Profit)")
