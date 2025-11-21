@@ -360,8 +360,8 @@ def main():
         "with annual inflation applied.\n"
         "- **Recommended headcount calculator** helps determine minimum staffing needs based on store operating hours "
         "and employees per shift (assumes 34 hours per employee per week).\n"
-        "- Labor is modeled as the **maximum of** a percentage-of-revenue target and a **minimum staffing floor** "
-        "(actual employee headcount × hourly rate × burden multiplier × hours per employee per week × 4.33).\n"
+        "- **Labor cost** is modeled as the **maximum of** a percentage-of-revenue target and a **minimum staffing floor**. "
+        "The staffing floor is calculated as: actual employee headcount × hourly rate × burden multiplier × hours per employee per month.\n"
         "- Ticket price inflates annually but is capped by a configurable **Max Ticket Price**.\n"
         "- **Performance targets** for COGS, Labor, Occupancy (Rent) and Other OpEx are adjustable in the sidebar "
         "and used for color coding. Net Profit is color-coded: green for positive, red for negative.\n"
@@ -932,12 +932,13 @@ def main():
     months_1_120 = df_5yr[df_5yr["Month"] <= 120].copy()
     months_1_120["Monthly Orders"] = months_1_120["Daily Orders"] * days_per_month
     months_1_120["Weekly Orders"] = months_1_120["Daily Orders"] * 7
-    monthly_breakdown_df = months_1_120[["Month", "Rent (Monthly)", "Labor (Monthly)", "COGS (Monthly)", "Other OpEx (Monthly)", "Daily Orders", "Weekly Orders", "Monthly Orders", "Monthly Revenue", "Monthly Profit"]].copy()
-    monthly_breakdown_df.columns = ["Month", "Rent ($)", "Labor ($)", "COGS ($)", "Other OpEx ($)", "Daily Orders", "Weekly Orders", "Monthly Orders", "Revenue ($)", "Net Revenue ($)"]
+    monthly_breakdown_df = months_1_120[["Month", "Rent (Monthly)", "Labor (Actual)", "Labor (Monthly)", "COGS (Monthly)", "Other OpEx (Monthly)", "Daily Orders", "Weekly Orders", "Monthly Orders", "Monthly Revenue", "Monthly Profit"]].copy()
+    monthly_breakdown_df.columns = ["Month", "Rent ($)", "Actual Labor ($)", "Labor ($)", "COGS ($)", "Other OpEx ($)", "Daily Orders", "Weekly Orders", "Monthly Orders", "Revenue ($)", "Net Profit ($)"]
     st.dataframe(
         monthly_breakdown_df.style.format(
             {
                 "Rent ($)": "${:,.0f}",
+                "Actual Labor ($)": "${:,.0f}",
                 "Labor ($)": "${:,.0f}",
                 "COGS ($)": "${:,.0f}",
                 "Other OpEx ($)": "${:,.0f}",
@@ -945,7 +946,7 @@ def main():
                 "Weekly Orders": "{:,.1f}",
                 "Monthly Orders": "{:,.0f}",
                 "Revenue ($)": "${:,.0f}",
-                "Net Revenue ($)": "${:,.0f}",
+                "Net Profit ($)": "${:,.0f}",
             }
         ),
         use_container_width=True,
@@ -1306,8 +1307,9 @@ def main():
     st.caption(
         "All profit and split numbers above are **per month**, not per year. "
         "Rent is modeled as a fixed monthly dollar amount with annual inflation. "
-        "Labor is the maximum of a percentage-of-revenue target and a staffing floor (employees × wage × burden × hours/week × 4.33). "
-        "Occupancy % is computed as Rent ÷ Revenue; Labor % (Actual) is Labor ÷ Revenue. "
+        "Labor cost (Labor column) is the maximum of a percentage-of-revenue target and a minimum staffing floor. "
+        "The staffing floor is: actual employee headcount × hourly rate × burden multiplier × hours per employee per month. "
+        "Occupancy % is computed as Rent ÷ Revenue; Labor % (Actual) is Labor cost ÷ Revenue. "
         "Color coding is based on your adjustable targets in the sidebar."
     )
 
