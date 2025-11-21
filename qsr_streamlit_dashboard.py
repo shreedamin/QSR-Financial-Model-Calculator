@@ -358,6 +358,19 @@ def main():
     # ----- Sidebar: Core Inputs -----
     st.sidebar.header("Core inputs")
 
+    st.sidebar.subheader("Performance targets (for color coding)")
+    st.sidebar.markdown(
+        "**Color key:**<br>"
+        "🟣 Purple = On target (±3%)<br>"
+        "🟢 Green = Below target (good)<br>"
+        "🔴 Red = Above target (bad)",
+        unsafe_allow_html=True
+    )
+    cogs_target = st.sidebar.slider("COGS target percent of revenue", 0.10, 0.60, 0.34, 0.01)
+    labor_target = st.sidebar.slider("Labor target percent of revenue", 0.10, 0.50, 0.24, 0.01)
+    occ_target = st.sidebar.slider("Rent/occupancy target percent of revenue", 0.05, 0.25, 0.10, 0.01)
+    other_target = st.sidebar.slider("Other OpEx target percent of revenue", 0.05, 0.30, 0.15, 0.01)
+
     # Ramp growth settings
     st.sidebar.subheader("Order growth – ramp + post-ramp")
     start_orders = st.sidebar.number_input(
@@ -390,9 +403,9 @@ def main():
     )
 
     st.sidebar.subheader("Cost structure – year 1 (% of monthly revenue)")
-    cogs_pct = st.sidebar.slider("COGS % of revenue", 0.20, 0.60, 0.348, 0.01)
-    labor_pct = st.sidebar.slider("Labor % target of revenue", 0.10, 0.50, 0.254, 0.01)
-    other_pct = st.sidebar.slider("Other OpEx % of revenue", 0.05, 0.30, 0.14, 0.01)
+    cogs_pct = st.sidebar.slider("COGS % of revenue", 0.20, 0.60, 0.34, 0.01)
+    labor_pct = st.sidebar.slider("Labor % target of revenue", 0.10, 0.50, 0.24, 0.01)
+    other_pct = st.sidebar.slider("Other OpEx % of revenue", 0.05, 0.30, 0.15, 0.01)
     
     st.sidebar.subheader("Misc monthly expenses")
     misc_expense_type = st.sidebar.radio(
@@ -538,7 +551,7 @@ def main():
 
     st.sidebar.subheader("Annual inflation on cost percentages")
     cogs_infl = st.sidebar.slider("COGS inflation (annual, % of COGS%)", 0.0, 0.10, 0.015, 0.005)
-    labor_infl = st.sidebar.slider("Labor inflation (annual, % of labor%)", 0.0, 0.10, 0.02, 0.005)
+    labor_infl = st.sidebar.slider("Labor inflation (annual, % of labor%)", 0.0, 0.10, 0.0, 0.005)
     other_infl = st.sidebar.slider("Other OpEx inflation (annual, % of other%)", 0.0, 0.10, 0.01, 0.005)
 
     st.sidebar.subheader("Investment & investor structure")
@@ -548,19 +561,6 @@ def main():
     num_investors = st.sidebar.number_input(
         "Number of investors (equal split)", min_value=1, max_value=10, value=3, step=1
     )
-
-    st.sidebar.subheader("Performance targets (for color coding)")
-    st.sidebar.markdown(
-        "**Color key:**<br>"
-        "🟣 Purple = On target (±3%)<br>"
-        "🟢 Green = Below target (good)<br>"
-        "🔴 Red = Above target (bad)",
-        unsafe_allow_html=True
-    )
-    cogs_target = st.sidebar.slider("COGS target percent of revenue", 0.10, 0.60, 0.34, 0.01)
-    labor_target = st.sidebar.slider("Labor target percent of revenue", 0.10, 0.50, 0.24, 0.01)
-    occ_target = st.sidebar.slider("Rent/occupancy target percent of revenue", 0.05, 0.25, 0.10, 0.01)
-    other_target = st.sidebar.slider("Other OpEx target percent of revenue", 0.05, 0.30, 0.15, 0.01)
 
     # ----- Core 10-year projection using ramp + real rent + real labor -----
     df_5yr, payback_month_5yr = compute_5yr_projection(
