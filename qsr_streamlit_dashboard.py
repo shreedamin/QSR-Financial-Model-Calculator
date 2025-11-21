@@ -957,7 +957,7 @@ def main():
     )
 
     # Yearly cost breakdown table (Years 1-10)
-    st.markdown("### Yearly Budgeted Cost Breakdown ($ / month)")
+    st.markdown("### Average Yearly Budgeted Cost Breakdown ($ / month)")
     
     # Build dictionary with data for each year
     comp_data = {
