@@ -1309,7 +1309,7 @@ def main():
         "Rent is modeled as a fixed monthly dollar amount with annual inflation. "
         "Labor cost (Labor Actual) is determined by your actual employee headcount. "
         "Labor cost (Budgeted) is a budget guideline for maximum labor spending, but your actual labor cost is: actual employee headcount × hourly rate × burden multiplier × hours per employee per month. "
-        "Occupancy % is computed as Rent ÷ Revenue; Labor % (Actual) is Labor cost ÷ Revenue. "
+        "Occupancy % is the target percentage of revenue to spend on rent/occupancy costs. "
         "Color coding is based on your adjustable targets in the sidebar."
     )
 
