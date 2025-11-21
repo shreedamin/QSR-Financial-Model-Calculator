@@ -432,7 +432,7 @@ def main():
     post_ramp_growth_type = st.sidebar.radio(
         "Post-ramp growth type",
         ["Fixed orders per month", "Annual percentage growth"],
-        index=0,
+        index=1,
         help="Choose whether post-ramp growth is a fixed number of orders per month or an annual percentage growth rate."
     )
     
