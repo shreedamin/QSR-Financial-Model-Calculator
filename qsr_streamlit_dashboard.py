@@ -338,6 +338,7 @@ def main():
 
     st.write(
         "All business metrics shown are **per month** or **per year** unless otherwise stated.\n\n"
+        "*Are you accessing this from a mobile browser? Use the menu button in the upper left to access the adjustment toolbar.*\n"
         "- Revenue, COGS, labor, other OpEx, rent, profit and investor splits are **monthly**.\n"
         "- Inflation inputs are **annual % increases** on ticket price, cost percentages, rent, and misc expenses.\n"
         "- Daily orders ramp from a starting value to a target over a chosen number of months, "
