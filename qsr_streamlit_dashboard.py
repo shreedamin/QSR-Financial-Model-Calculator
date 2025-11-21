@@ -383,6 +383,9 @@ def main():
         "🔴 Red = Above target (bad)",
         unsafe_allow_html=True
     )
+    st.sidebar.caption(
+        "💡 **Hint:** We recommend setting these values to the values set in section Cost structure – year 1 (% of monthly revenue)"
+    )
     cogs_target = st.sidebar.slider("COGS target percent of revenue", 0.10, 0.60, 0.34, 0.01)
     labor_target = st.sidebar.slider("Labor target percent of revenue", 0.10, 0.50, 0.24, 0.01)
     occ_target = st.sidebar.slider("Rent/occupancy target percent of revenue", 0.05, 0.25, 0.10, 0.01)
