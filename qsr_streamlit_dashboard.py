@@ -1010,12 +1010,13 @@ def main():
     )
 
     # Yearly cost breakdown table (Years 1-10)
-    st.markdown("### Average Yearly Budgeted Cost Breakdown ($ / month)")
+    st.markdown("### Yearly Budgeted Cost Breakdown ($ / month)")
     
     # Build dictionary with data for each year
     comp_data = {
         "Metric": [
-            "Revenue",
+            "Revenue (avg monthly)",
+            "Revenue (Yearly total)",
             "COGS",
             "Gross Profit",
             "Labor (Budgeted)",
@@ -1035,9 +1036,11 @@ def main():
         year_data = df_year_summary[df_year_summary["Year"] == year]
         if not year_data.empty:
             avg_revenue = float(year_data["Avg Monthly Revenue"].iloc[0])
+            yearly_total_revenue = avg_revenue * 12  # Yearly total revenue
             rent_budgeted = avg_revenue * occ_target  # Target rent based on occupancy target %
             comp_data[f"Year {year}"] = [
                 avg_revenue,
+                yearly_total_revenue,
                 float(year_data["Avg COGS (Monthly)"].iloc[0]),
                 float(year_data["Avg Monthly Gross Profit"].iloc[0]),
                 float(year_data["Avg Labor (Target)"].iloc[0]),
@@ -1050,7 +1053,7 @@ def main():
             format_dict[f"Year {year}"] = "{:,.0f}"
         else:
             # If year doesn't exist, fill with zeros or NaN
-            comp_data[f"Year {year}"] = [0.0] * 9
+            comp_data[f"Year {year}"] = [0.0] * 10
             format_dict[f"Year {year}"] = "{:,.0f}"
     
     comp_df = pd.DataFrame(comp_data)
@@ -1061,17 +1064,18 @@ def main():
         colors = [''] * len(row)
         
         # Find row indices (updated order)
-        # 0: Revenue, 1: COGS, 2: Gross Profit, 3: Labor (Budgeted), 4: Labor (Actual), 
-        # 5: Other OpEx, 6: Rent (Budgeted), 7: Rent (Actual), 8: Net Profit
+        # 0: Revenue (avg monthly), 1: Revenue (Yearly total), 2: COGS, 3: Gross Profit, 
+        # 4: Labor (Budgeted), 5: Labor (Actual), 6: Other OpEx, 7: Rent (Budgeted), 
+        # 8: Rent (Actual), 9: Net Profit
         
-        if row.name == 3:  # Labor (Budgeted) row
+        if row.name == 4:  # Labor (Budgeted) row
             return [''] * len(row)  # No color for budgeted row
-        elif row.name == 4:  # Labor (Actual) row
+        elif row.name == 5:  # Labor (Actual) row
             # Compare Actual vs Budgeted for each year column
             for i, col in enumerate(comp_df.columns):
                 if col.startswith('Year '):
                     try:
-                        budgeted_idx = 3  # Labor (Budgeted) row index
+                        budgeted_idx = 4  # Labor (Budgeted) row index
                         actual_val = row[col]
                         target_val = comp_df.loc[budgeted_idx, col]
                         
@@ -1088,14 +1092,14 @@ def main():
                     except (ValueError, TypeError, KeyError):
                         pass
             return colors
-        elif row.name == 6:  # Rent (Budgeted) row
+        elif row.name == 7:  # Rent (Budgeted) row
             return [''] * len(row)  # No color for budgeted row
-        elif row.name == 7:  # Rent (Actual) row
+        elif row.name == 8:  # Rent (Actual) row
             # Compare Actual Rent vs Budgeted Rent for each year column
             for i, col in enumerate(comp_df.columns):
                 if col.startswith('Year '):
                     try:
-                        budgeted_idx = 6  # Rent (Budgeted) row index
+                        budgeted_idx = 7  # Rent (Budgeted) row index
                         actual_rent = row[col]
                         budgeted_rent = comp_df.loc[budgeted_idx, col]
                         
@@ -1112,7 +1116,7 @@ def main():
                     except (ValueError, TypeError, KeyError, ZeroDivisionError):
                         pass
             return colors
-        elif row.name == 8:  # Net Profit row
+        elif row.name == 9:  # Net Profit row
             # Color code Net Profit: green for positive, red for negative
             for i, col in enumerate(comp_df.columns):
                 if col.startswith('Year '):
