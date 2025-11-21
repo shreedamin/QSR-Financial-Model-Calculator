@@ -334,7 +334,7 @@ def profit_status_emoji(net_per_investor: float):
 
 
 def main():
-    st.title("QSR Financial Model – Ramp Growth, Real Rent, Real Labor & Investor View")
+    st.title("Quick Service Restaurant Financial Model")
 
     st.write(
         "All business metrics shown are **per month** or **per year** unless otherwise stated.\n\n"
