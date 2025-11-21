@@ -334,7 +334,7 @@ def profit_status_emoji(net_per_investor: float):
 
 
 def main():
-    st.title("Quick Service Restaurant Financial Model")
+    st.title("Quick Service Restaurant Financial Model Calculator")
 
     st.write(
         "All business metrics shown are **per month** or **per year** unless otherwise stated.\n\n"
