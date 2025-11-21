@@ -12,16 +12,27 @@ def build_orders_with_ramp_and_postgrowth(
     target_orders: float,
     ramp_months: int,
     total_months: int,
-    post_ramp_growth_per_month: float,
+    post_ramp_growth_type: str,
+    post_ramp_growth_value: float,
     max_daily_orders: float,
 ):
     """
     Linear ramp from start_orders to target_orders over ramp_months,
-    then continue growing by post_ramp_growth_per_month each month
+    then continue growing either:
+    - by fixed orders per month (post_ramp_growth_type == "fixed")
+    - by annual percentage growth (post_ramp_growth_type == "percentage")
     until hitting max_daily_orders.
     """
     months = np.arange(1, total_months + 1)
     orders = np.zeros_like(months, dtype=float)
+
+    # Calculate monthly growth rate if using percentage
+    if post_ramp_growth_type == "percentage":
+        # Convert annual percentage to monthly compound growth rate
+        # If annual growth is g (as decimal), monthly rate = (1 + g)^(1/12) - 1
+        monthly_growth_rate = (1 + post_ramp_growth_value) ** (1/12) - 1
+    else:
+        monthly_growth_rate = None
 
     if ramp_months <= 1:
         # Immediate jump to target, then post-ramp growth
@@ -29,7 +40,14 @@ def build_orders_with_ramp_and_postgrowth(
             if m == 1:
                 ords = target_orders
             else:
-                ords = min(target_orders + post_ramp_growth_per_month * (m - 1), max_daily_orders)
+                if post_ramp_growth_type == "percentage":
+                    # Compound growth: multiply by (1 + monthly_rate) for each month after ramp
+                    months_since_ramp = m - 1
+                    ords = target_orders * ((1 + monthly_growth_rate) ** months_since_ramp)
+                else:
+                    # Fixed orders per month
+                    ords = target_orders + post_ramp_growth_value * (m - 1)
+                ords = min(ords, max_daily_orders)
             orders[i - 1] = ords
         return orders
 
@@ -41,7 +59,12 @@ def build_orders_with_ramp_and_postgrowth(
         else:
             # Post-ramp growth
             extra_months = m - ramp_months
-            ords = target_orders + post_ramp_growth_per_month * extra_months
+            if post_ramp_growth_type == "percentage":
+                # Compound growth: multiply target by (1 + monthly_rate)^extra_months
+                ords = target_orders * ((1 + monthly_growth_rate) ** extra_months)
+            else:
+                # Fixed orders per month
+                ords = target_orders + post_ramp_growth_value * extra_months
             orders[i - 1] = min(ords, max_daily_orders)
 
     return orders
@@ -70,7 +93,8 @@ def compute_5yr_projection(
     hours_per_employee_month: float,
     investment: float,
     # post-ramp growth
-    post_ramp_growth_per_month: float,
+    post_ramp_growth_type: str,
+    post_ramp_growth_value: float,
     max_daily_orders: float,
     # misc expenses
     misc_expense_pct: float = 0.0,
@@ -90,7 +114,8 @@ def compute_5yr_projection(
         target_orders,
         ramp_months,
         total_months,
-        post_ramp_growth_per_month,
+        post_ramp_growth_type,
+        post_ramp_growth_value,
         max_daily_orders,
     )
 
@@ -402,9 +427,36 @@ def main():
     ramp_months = st.sidebar.number_input(
         "Ramp duration (months)", min_value=1, max_value=120, value=24, step=1
     )
-    post_ramp_growth_per_month = st.sidebar.slider(
-        "Post-ramp growth (additional daily orders per month)", min_value=0.0, max_value=20.0, value=10.0, step=0.5
+    
+    # Post-ramp growth type selection
+    post_ramp_growth_type = st.sidebar.radio(
+        "Post-ramp growth type",
+        ["Fixed orders per month", "Annual percentage growth"],
+        index=0,
+        help="Choose whether post-ramp growth is a fixed number of orders per month or an annual percentage growth rate."
     )
+    
+    if post_ramp_growth_type == "Fixed orders per month":
+        post_ramp_growth_value = st.sidebar.slider(
+            "Post-ramp growth (additional daily orders per month)", 
+            min_value=0.0, 
+            max_value=20.0, 
+            value=10.0, 
+            step=0.5
+        )
+    else:
+        # Use a slider from 0 to 100 for percentage, then convert to decimal
+        post_ramp_growth_pct = st.sidebar.slider(
+            "Post-ramp growth (annual %)", 
+            min_value=0.0, 
+            max_value=100.0, 
+            value=20.0, 
+            step=0.5,
+            help="Annual percentage growth rate (e.g., 20% = 20.0). This will compound monthly."
+        )
+        # Convert percentage to decimal (20% -> 0.20)
+        post_ramp_growth_value = post_ramp_growth_pct / 100.0
+    
     max_daily_orders = st.sidebar.number_input(
         "Max daily orders cap", min_value=50.0, max_value=1000.0, value=300.0, step=10.0
     )
@@ -604,7 +656,8 @@ def main():
         labor_burden_mult,
         hours_per_employee_month,
         investment,
-        post_ramp_growth_per_month,
+        "fixed" if post_ramp_growth_type == "Fixed orders per month" else "percentage",
+        post_ramp_growth_value,
         max_daily_orders,
         misc_expense_pct=misc_expense_pct,
         misc_expense_fixed=misc_expense_fixed,
