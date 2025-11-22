@@ -496,9 +496,31 @@ def main():
         # Convert percentage to decimal (20% -> 0.20)
         post_ramp_growth_value = post_ramp_growth_pct / 100.0
     
-    max_daily_orders = st.sidebar.number_input(
-        "Max daily orders cap", min_value=50.0, max_value=1000.0, value=300.0, step=10.0
+    # Max daily orders cap input method
+    max_input_method = st.sidebar.radio(
+        "Max cap input method",
+        ["Daily Orders", "Max Revenue ($/month)"],
+        index=0,
+        help="Choose whether to input max daily orders or max monthly revenue. The other value will be calculated."
     )
+    
+    if max_input_method == "Daily Orders":
+        max_daily_orders = st.sidebar.number_input(
+            "Max daily orders cap", min_value=50.0, max_value=1000.0, value=300.0, step=10.0
+        )
+        # Calculate max revenue from orders
+        max_revenue = max_daily_orders * days_per_month * ticket
+        st.sidebar.info(f"**Calculated max revenue:** ${max_revenue:,.0f}/month")
+    else:
+        max_revenue = st.sidebar.number_input(
+            "Max revenue ($/month)", min_value=0.0, max_value=2000000.0, value=153000.0, step=100.0
+        )
+        # Calculate max orders from revenue
+        if ticket > 0 and days_per_month > 0:
+            max_daily_orders = max_revenue / (days_per_month * ticket)
+        else:
+            max_daily_orders = 0.0
+        st.sidebar.info(f"**Calculated max daily orders:** {max_daily_orders:,.1f} orders/day")
     ticket_infl = st.sidebar.slider(
         "Ticket price inflation (annual %)", min_value=0.0, max_value=0.10, value=0.02, step=0.005
     )
@@ -1216,23 +1238,31 @@ def main():
     extra_headcount_plus_one = total_store_hours_per_month / hours_per_employee_month if hours_per_employee_month > 0 else 0
     
     # Find first year they can afford full staffing cost
-    # Compare against Labor (Target) - the percentage-based budget to see when revenue can cover the cost
+    # Check if net profit would still be positive after switching to full staffing
+    # new_net_profit = current_net_profit + current_labor - full_staffing_cost
     first_year_afford_staffing = None
     for year in range(1, 11):
         year_data = df_year_summary[df_year_summary["Year"] == year]
         if not year_data.empty:
-            avg_labor_target = float(year_data["Avg Labor (Target)"].iloc[0])
-            if avg_labor_target >= full_staffing_cost_per_month:
+            avg_net_profit = float(year_data["Avg Monthly Net Profit"].iloc[0])
+            avg_labor_actual = float(year_data["Avg Labor (Actual)"].iloc[0])
+            # Calculate net profit if they switch to full staffing
+            new_net_profit = avg_net_profit + avg_labor_actual - full_staffing_cost_per_month
+            if new_net_profit >= 0:
                 first_year_afford_staffing = year
                 break
     
     # Find first year they can afford full staffing plus one more employee (5 employees)
+    # Check if net profit would still be positive after switching to full staffing plus one
     first_year_afford_staffing_plus_one = None
     for year in range(1, 11):
         year_data = df_year_summary[df_year_summary["Year"] == year]
         if not year_data.empty:
-            avg_labor_target = float(year_data["Avg Labor (Target)"].iloc[0])
-            if avg_labor_target >= full_staffing_plus_one_cost_per_month:
+            avg_net_profit = float(year_data["Avg Monthly Net Profit"].iloc[0])
+            avg_labor_actual = float(year_data["Avg Labor (Actual)"].iloc[0])
+            # Calculate net profit if they switch to full staffing plus one
+            new_net_profit = avg_net_profit + avg_labor_actual - full_staffing_plus_one_cost_per_month
+            if new_net_profit >= 0:
                 first_year_afford_staffing_plus_one = year
                 break
     
