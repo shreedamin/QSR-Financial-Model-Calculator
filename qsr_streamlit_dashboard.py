@@ -1530,7 +1530,7 @@ def main():
     
     # Add note about Other OpEx including Misc Expenses
     st.caption(
-        "💡 **Note:** Other OpEx includes Misc Monthly Expenses (either percentage-based or fixed dollar amount)."
+        "💡 **Note:** Other OpEx includes Misc Monthly Expenses, Net Profit uses Labor and Rent actual "
     )
 
     # Find first profitable year
