@@ -497,7 +497,7 @@ def main():
     
     # File uploader for import
     uploaded_file = st.sidebar.file_uploader(
-        "Import settings from JSON file",
+        "Import values from JSON file",
         type=['json'],
         help="Upload a previously exported JSON file to restore all settings",
         key="settings_uploader"
