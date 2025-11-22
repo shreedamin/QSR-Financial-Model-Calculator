@@ -3,6 +3,8 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import json
+from datetime import datetime
 
 # ----------------- Helper functions -----------------
 
@@ -366,6 +368,93 @@ def profit_status_emoji(net_per_investor: float):
         return "🔴"
 
 
+# ----------------- Export/Import Functions -----------------
+
+def export_all_values(
+    investment, num_investors, days_per_month, ticket, start_input_method,
+    start_orders, start_revenue, target_input_method, target_orders, target_revenue,
+    ramp_months, post_ramp_growth_type, post_ramp_growth_value, max_input_method,
+    max_daily_orders, max_revenue, ticket_infl, max_ticket_price,
+    cogs_pct, labor_pct, other_pct, cogs_infl, labor_infl, other_infl,
+    misc_expense_type, misc_expense_pct, misc_expense_fixed, misc_expense_infl,
+    rent_month_y1, rent_infl, cogs_target, labor_target, occ_target, other_target,
+    store_hours_mon, store_hours_tue, store_hours_wed, store_hours_thu,
+    store_hours_fri, store_hours_sat, store_hours_sun, employees_per_shift,
+    actual_employees, hourly_rate, labor_burden_mult, hours_per_employee_week
+):
+    """Export all input values to a JSON dictionary."""
+    export_data = {
+        "version": "1.0",
+        "export_date": datetime.now().isoformat(),
+        "parameters": {
+            "investment": float(investment),
+            "num_investors": int(num_investors),
+            "days_per_month": float(days_per_month),
+            "ticket": float(ticket),
+            "start_input_method": start_input_method,
+            "start_orders": float(start_orders) if start_orders else None,
+            "start_revenue": float(start_revenue) if start_revenue else None,
+            "target_input_method": target_input_method,
+            "target_orders": float(target_orders) if target_orders else None,
+            "target_revenue": float(target_revenue) if target_revenue else None,
+            "ramp_months": int(ramp_months),
+            "post_ramp_growth_type": post_ramp_growth_type,
+            "post_ramp_growth_value": float(post_ramp_growth_value),
+            "max_input_method": max_input_method,
+            "max_daily_orders": float(max_daily_orders) if max_daily_orders else None,
+            "max_revenue": float(max_revenue) if max_revenue else None,
+            "ticket_infl": float(ticket_infl),
+            "max_ticket_price": float(max_ticket_price),
+            "cogs_pct": float(cogs_pct),
+            "labor_pct": float(labor_pct),
+            "other_pct": float(other_pct),
+            "cogs_infl": float(cogs_infl),
+            "labor_infl": float(labor_infl),
+            "other_infl": float(other_infl),
+            "misc_expense_type": misc_expense_type,
+            "misc_expense_pct": float(misc_expense_pct),
+            "misc_expense_fixed": float(misc_expense_fixed),
+            "misc_expense_infl": float(misc_expense_infl),
+            "rent_month_y1": float(rent_month_y1),
+            "rent_infl": float(rent_infl),
+            "cogs_target": float(cogs_target),
+            "labor_target": float(labor_target),
+            "occ_target": float(occ_target),
+            "other_target": float(other_target),
+            "store_hours_mon": float(store_hours_mon),
+            "store_hours_tue": float(store_hours_tue),
+            "store_hours_wed": float(store_hours_wed),
+            "store_hours_thu": float(store_hours_thu),
+            "store_hours_fri": float(store_hours_fri),
+            "store_hours_sat": float(store_hours_sat),
+            "store_hours_sun": float(store_hours_sun),
+            "employees_per_shift": int(employees_per_shift),
+            "actual_employees": int(actual_employees),
+            "hourly_rate": float(hourly_rate),
+            "labor_burden_mult": float(labor_burden_mult),
+            "hours_per_employee_week": float(hours_per_employee_week),
+        }
+    }
+    return json.dumps(export_data, indent=2)
+
+
+def import_all_values(json_str):
+    """Import all input values from a JSON string and return as dictionary."""
+    try:
+        data = json.loads(json_str)
+        if "parameters" in data:
+            return data["parameters"]
+        else:
+            # Handle old format where parameters are at root level
+            return data
+    except json.JSONDecodeError as e:
+        st.error(f"Invalid JSON file: {str(e)}")
+        return None
+    except Exception as e:
+        st.error(f"Error importing values: {str(e)}")
+        return None
+
+
 # ----------------- Streamlit App (v9) -----------------
 
 
@@ -397,46 +486,104 @@ def main():
         "(Daily, Weekly, Monthly Orders), and financial metrics (Revenue, Net Revenue) for months 1-120."
     )
 
+    # ----- Sidebar: Export/Import -----
+    st.sidebar.header("💾 Export/Import Settings")
+    
+    # Initialize session state for imported values
+    if 'imported_values' not in st.session_state:
+        st.session_state.imported_values = None
+    if 'settings_imported' not in st.session_state:
+        st.session_state.settings_imported = False
+    
+    # File uploader for import
+    uploaded_file = st.sidebar.file_uploader(
+        "Import settings from JSON file",
+        type=['json'],
+        help="Upload a previously exported JSON file to restore all settings",
+        key="settings_uploader"
+    )
+    
+    if uploaded_file is not None and not st.session_state.settings_imported:
+        try:
+            json_str = uploaded_file.read().decode('utf-8')
+            imported_params = import_all_values(json_str)
+            if imported_params:
+                st.session_state.imported_values = imported_params
+                st.session_state.settings_imported = True
+                st.sidebar.success("✅ Settings imported successfully! The page will refresh to apply changes.")
+                # Force a rerun to apply the imported values
+                st.rerun()
+        except Exception as e:
+            st.sidebar.error(f"Error reading file: {str(e)}")
+    
+    # Reset import flag when file is cleared (uploaded_file becomes None)
+    if uploaded_file is None and st.session_state.settings_imported:
+        st.session_state.settings_imported = False
+    
+    # Placeholder for export button (will be populated after inputs are collected)
+    export_placeholder = st.sidebar.empty()
+    
+    st.sidebar.markdown("---")
+    
     # ----- Sidebar: Core Inputs -----
     st.sidebar.header("Core inputs")
 
     st.sidebar.subheader("Investment & Investor Structure")
+    
+    # Get default values from imported values if available
+    imported = st.session_state.imported_values or {}
+    investment_default = imported.get("investment", 250000.0)
+    num_investors_default = imported.get("num_investors", 3)
+    
     investment = st.sidebar.number_input(
-        "Total investment ($)", min_value=50000.0, max_value=2000000.0, value=250000.0, step=25000.0
+        "Total investment ($)", min_value=50000.0, max_value=2000000.0, value=investment_default, step=25000.0
     )
     num_investors = st.sidebar.number_input(
-        "Number of investors (equal split)", min_value=1, max_value=10, value=3, step=1
+        "Number of investors (equal split)", min_value=1, max_value=10, value=num_investors_default, step=1
     )
 
     # Ramp growth settings
     st.sidebar.subheader("Revenue Growth: Ramp + Post-Ramp")
     
     # Ticket and days inputs (needed for order/revenue calculations)
+    days_per_month_default = imported.get("days_per_month", 30)
+    ticket_default = imported.get("ticket", 17.0)
+    
     days_per_month = st.sidebar.slider(
-        "Operating days per month", min_value=20, max_value=31, value=30
+        "Operating days per month", min_value=20, max_value=31, value=days_per_month_default
     )
     ticket = st.sidebar.slider(
-        "Base ticket ($ per order, year 1)", min_value=8.0, max_value=40.0, value=17.0, step=0.5
+        "Base ticket ($ per order, year 1)", min_value=8.0, max_value=40.0, value=ticket_default, step=0.5
     )
     
     # Start value input method
+    start_input_method_options = ["Starting Orders", "Starting Revenue ($/month)"]
+    start_input_method_default_idx = 0
+    if imported.get("start_input_method"):
+        try:
+            start_input_method_default_idx = start_input_method_options.index(imported.get("start_input_method"))
+        except ValueError:
+            pass
+    
     start_input_method = st.sidebar.radio(
         "Start value input method",
-        ["Starting Orders", "Starting Revenue ($/month)"],
-        index=0,
+        start_input_method_options,
+        index=start_input_method_default_idx,
         help="Choose whether to input starting daily orders or starting monthly revenue. The other value will be calculated."
     )
     
     if start_input_method == "Starting Orders":
+        start_orders_default = imported.get("start_orders", 75.0)
         start_orders = st.sidebar.number_input(
-            "Start daily orders (month 1)", min_value=0.0, max_value=500.0, value=75.0, step=5.0
+            "Start daily orders (month 1)", min_value=0.0, max_value=500.0, value=start_orders_default, step=5.0
         )
         # Calculate starting revenue from orders
         start_revenue = start_orders * days_per_month * ticket
         st.sidebar.info(f"**Calculated starting revenue:** ${start_revenue:,.0f}/month")
     else:
+        start_revenue_default = imported.get("start_revenue", 38250.0)
         start_revenue = st.sidebar.number_input(
-            "Starting revenue ($/month)", min_value=0.0, max_value=500000.0, value=38250.0, step=100.0
+            "Starting revenue ($/month)", min_value=0.0, max_value=500000.0, value=start_revenue_default, step=100.0
         )
         # Calculate starting orders from revenue
         if ticket > 0 and days_per_month > 0:
@@ -446,23 +593,33 @@ def main():
         st.sidebar.info(f"**Calculated start daily orders:** {start_orders:,.1f} orders/day")
     
     # Target value input method
+    target_input_method_options = ["Target Orders", "Target Revenue ($/month)"]
+    target_input_method_default_idx = 0
+    if imported.get("target_input_method"):
+        try:
+            target_input_method_default_idx = target_input_method_options.index(imported.get("target_input_method"))
+        except ValueError:
+            pass
+    
     target_input_method = st.sidebar.radio(
         "Target value input method",
-        ["Target Orders", "Target Revenue ($/month)"],
-        index=0,
+        target_input_method_options,
+        index=target_input_method_default_idx,
         help="Choose whether to input target daily orders or target monthly revenue. The other value will be calculated."
     )
     
     if target_input_method == "Target Orders":
+        target_orders_default = imported.get("target_orders", 185.0)
         target_orders = st.sidebar.number_input(
-            "Target daily orders at ramp end", min_value=1.0, max_value=800.0, value=185.0, step=5.0
+            "Target daily orders at ramp end", min_value=1.0, max_value=800.0, value=target_orders_default, step=5.0
         )
         # Calculate target revenue from orders
         target_revenue = target_orders * days_per_month * ticket
         st.sidebar.info(f"**Calculated target revenue:** ${target_revenue:,.0f}/month")
     else:
+        target_revenue_default = imported.get("target_revenue", 94350.0)
         target_revenue = st.sidebar.number_input(
-            "Target revenue ($/month)", min_value=0.0, max_value=1000000.0, value=94350.0, step=100.0
+            "Target revenue ($/month)", min_value=0.0, max_value=1000000.0, value=target_revenue_default, step=100.0
         )
         # Calculate target orders from revenue
         if ticket > 0 and days_per_month > 0:
@@ -471,33 +628,49 @@ def main():
             target_orders = 0.0
         st.sidebar.info(f"**Calculated target daily orders:** {target_orders:,.1f} orders/day")
     
+    ramp_months_default = imported.get("ramp_months", 24)
     ramp_months = st.sidebar.number_input(
-        "Ramp duration (months)", min_value=1, max_value=120, value=24, step=1
+        "Ramp duration (months)", min_value=1, max_value=120, value=ramp_months_default, step=1
     )
     
     # Post-ramp growth type selection
+    post_ramp_growth_type_options = ["Fixed orders per month", "Annual percentage growth"]
+    post_ramp_growth_type_default_idx = 1
+    if imported.get("post_ramp_growth_type"):
+        if imported.get("post_ramp_growth_type") == "Fixed orders per month":
+            post_ramp_growth_type_default_idx = 0
+        else:
+            post_ramp_growth_type_default_idx = 1
+    
     post_ramp_growth_type = st.sidebar.radio(
         "Post-ramp growth type",
-        ["Fixed orders per month", "Annual percentage growth"],
-        index=1,
+        post_ramp_growth_type_options,
+        index=post_ramp_growth_type_default_idx,
         help="Choose whether post-ramp growth is a fixed number of orders per month or an annual percentage growth rate."
     )
     
+    post_ramp_growth_value_imported = imported.get("post_ramp_growth_value", None)
+    
     if post_ramp_growth_type == "Fixed orders per month":
+        post_ramp_growth_value_default = post_ramp_growth_value_imported if post_ramp_growth_value_imported is not None else 10.0
         post_ramp_growth_value = st.sidebar.slider(
             "Post-ramp growth (additional daily orders per month)", 
             min_value=0.0, 
             max_value=20.0, 
-            value=10.0, 
+            value=post_ramp_growth_value_default, 
             step=0.5
         )
     else:
         # Use a slider from 0 to 100 for percentage, then convert to decimal
+        if post_ramp_growth_value_imported is not None:
+            post_ramp_growth_pct_default = post_ramp_growth_value_imported * 100.0
+        else:
+            post_ramp_growth_pct_default = 20.0
         post_ramp_growth_pct = st.sidebar.slider(
             "Post-ramp growth (annual %)", 
             min_value=0.0, 
             max_value=100.0, 
-            value=20.0, 
+            value=post_ramp_growth_pct_default, 
             step=0.5,
             help="Annual percentage growth rate (e.g., 20% = 20.0). This will compound monthly."
         )
@@ -505,23 +678,33 @@ def main():
         post_ramp_growth_value = post_ramp_growth_pct / 100.0
     
     # Max daily orders cap input method
+    max_input_method_options = ["Max Orders", "Max Revenue ($/month)"]
+    max_input_method_default_idx = 0
+    if imported.get("max_input_method"):
+        try:
+            max_input_method_default_idx = max_input_method_options.index(imported.get("max_input_method"))
+        except ValueError:
+            pass
+    
     max_input_method = st.sidebar.radio(
         "Max cap input method",
-        ["Max Orders", "Max Revenue ($/month)"],
-        index=0,
+        max_input_method_options,
+        index=max_input_method_default_idx,
         help="Choose whether to input max daily orders or max monthly revenue. The other value will be calculated."
     )
     
     if max_input_method == "Max Orders":
+        max_daily_orders_default = imported.get("max_daily_orders", 300.0)
         max_daily_orders = st.sidebar.number_input(
-            "Max daily orders cap", min_value=50.0, max_value=1000.0, value=300.0, step=10.0
+            "Max daily orders cap", min_value=50.0, max_value=1000.0, value=max_daily_orders_default, step=10.0
         )
         # Calculate max revenue from orders
         max_revenue = max_daily_orders * days_per_month * ticket
         st.sidebar.info(f"**Calculated max revenue:** ${max_revenue:,.0f}/month")
     else:
+        max_revenue_default = imported.get("max_revenue", 153000.0)
         max_revenue = st.sidebar.number_input(
-            "Max revenue ($/month)", min_value=0.0, max_value=2000000.0, value=153000.0, step=100.0
+            "Max revenue ($/month)", min_value=0.0, max_value=2000000.0, value=max_revenue_default, step=100.0
         )
         # Calculate max orders from revenue
         if ticket > 0 and days_per_month > 0:
@@ -529,67 +712,92 @@ def main():
         else:
             max_daily_orders = 0.0
         st.sidebar.info(f"**Calculated max daily orders:** {max_daily_orders:,.1f} orders/day")
+    
+    ticket_infl_default = imported.get("ticket_infl", 0.02)
     ticket_infl = st.sidebar.slider(
-        "Ticket price inflation (annual %)", min_value=0.0, max_value=0.10, value=0.02, step=0.005
+        "Ticket price inflation (annual %)", min_value=0.0, max_value=0.10, value=ticket_infl_default, step=0.005
     )
+    max_ticket_price_default = imported.get("max_ticket_price", 34.0)
     max_ticket_price = st.sidebar.number_input(
-        "Max ticket price ($)", min_value=10.0, max_value=100.0, value=34.0, step=1.0
+        "Max ticket price ($)", min_value=10.0, max_value=100.0, value=max_ticket_price_default, step=1.0
     )
 
     st.sidebar.subheader("Cost Structure – Year 1 (% of monthly revenue)")
-    cogs_pct = st.sidebar.slider("COGS % of revenue", 0.20, 0.60, 0.34, 0.01)
-    labor_pct = st.sidebar.slider("Labor % target of revenue", 0.10, 0.50, 0.24, 0.01)
-    other_pct = st.sidebar.slider("Other OpEx % of revenue", 0.05, 0.30, 0.15, 0.01)
+    cogs_pct_default = imported.get("cogs_pct", 0.34)
+    labor_pct_default = imported.get("labor_pct", 0.24)
+    other_pct_default = imported.get("other_pct", 0.15)
+    
+    cogs_pct = st.sidebar.slider("COGS % of revenue", 0.20, 0.60, cogs_pct_default, 0.01)
+    labor_pct = st.sidebar.slider("Labor % target of revenue", 0.10, 0.50, labor_pct_default, 0.01)
+    other_pct = st.sidebar.slider("Other OpEx % of revenue", 0.05, 0.30, other_pct_default, 0.01)
     
     st.sidebar.subheader("Annual inflation on cost percentages")
-    cogs_infl = st.sidebar.slider("COGS inflation (annual, % of COGS%)", 0.0, 0.10, 0.015, 0.005)
-    labor_infl = st.sidebar.slider("Labor inflation (annual, % of labor%)", 0.0, 0.10, 0.0, 0.005)
-    other_infl = st.sidebar.slider("Other OpEx inflation (annual, % of other%)", 0.0, 0.10, 0.01, 0.005)
+    cogs_infl_default = imported.get("cogs_infl", 0.015)
+    labor_infl_default = imported.get("labor_infl", 0.0)
+    other_infl_default = imported.get("other_infl", 0.01)
+    
+    cogs_infl = st.sidebar.slider("COGS inflation (annual, % of COGS%)", 0.0, 0.10, cogs_infl_default, 0.005)
+    labor_infl = st.sidebar.slider("Labor inflation (annual, % of labor%)", 0.0, 0.10, labor_infl_default, 0.005)
+    other_infl = st.sidebar.slider("Other OpEx inflation (annual, % of other%)", 0.0, 0.10, other_infl_default, 0.005)
     
     st.sidebar.subheader("Misc monthly expenses")
+    misc_expense_type_options = ["Percentage of Revenue", "Fixed Dollar Amount"]
+    misc_expense_type_default_idx = 0
+    if imported.get("misc_expense_type"):
+        try:
+            misc_expense_type_default_idx = misc_expense_type_options.index(imported.get("misc_expense_type"))
+        except ValueError:
+            pass
+    
     misc_expense_type = st.sidebar.radio(
         "Misc expense type",
-        ["Percentage of Revenue", "Fixed Dollar Amount"],
-        index=0,
+        misc_expense_type_options,
+        index=misc_expense_type_default_idx,
         help="Choose whether misc expenses are calculated as a percentage of revenue or a fixed monthly amount."
     )
     
     if misc_expense_type == "Percentage of Revenue":
+        misc_expense_pct_default = imported.get("misc_expense_pct", 0.0)
         misc_expense_pct = st.sidebar.slider(
             "Misc expenses % of revenue", 
             min_value=0.0, 
             max_value=0.20, 
-            value=0.0, 
+            value=misc_expense_pct_default, 
             step=0.005,
             help="Misc expenses as a percentage of monthly revenue"
         )
         misc_expense_fixed = 0.0
     else:
+        misc_expense_fixed_default = imported.get("misc_expense_fixed", 0.0)
         misc_expense_fixed = st.sidebar.number_input(
             "Misc expenses fixed amount ($/month)",
             min_value=0.0,
             max_value=50000.0,
-            value=0.0,
+            value=misc_expense_fixed_default,
             step=100.0,
             help="Fixed monthly misc expenses in dollars"
         )
         misc_expense_pct = 0.0
     
+    misc_expense_infl_default = imported.get("misc_expense_infl", 0.01)
     misc_expense_infl = st.sidebar.slider(
         "Misc expenses inflation (annual %)", 
         min_value=0.0, 
         max_value=0.10, 
-        value=0.01, 
+        value=misc_expense_infl_default, 
         step=0.005,
         help="Annual inflation rate for misc expenses"
     )
 
     st.sidebar.subheader("Rent (occupancy) – Real Dollars")
+    rent_month_y1_default = imported.get("rent_month_y1", 10500.0)
+    rent_infl_default = imported.get("rent_infl", 0.03)
+    
     rent_month_y1 = st.sidebar.number_input(
-        "Monthly rent – year 1 ($)", min_value=2000.0, max_value=30000.0, value=10500.0, step=500.0
+        "Monthly rent – year 1 ($)", min_value=2000.0, max_value=30000.0, value=rent_month_y1_default, step=500.0
     )
     rent_infl = st.sidebar.slider(
-        "Rent inflation (annual %)", min_value=0.0, max_value=0.10, value=0.03, step=0.005
+        "Rent inflation (annual %)", min_value=0.0, max_value=0.10, value=rent_infl_default, step=0.005
     )
 
     st.sidebar.subheader("Performance Targets (For color coding)")
@@ -603,20 +811,33 @@ def main():
     st.sidebar.caption(
         "💡 We recommend setting these values to the values inputted above**"
     )
-    cogs_target = st.sidebar.slider("COGS target percent of revenue", 0.10, 0.60, 0.34, 0.01)
-    labor_target = st.sidebar.slider("Labor target percent of revenue", 0.10, 0.50, 0.24, 0.01)
-    occ_target = st.sidebar.slider("Rent/occupancy target percent of revenue", 0.05, 0.25, 0.10, 0.01)
-    other_target = st.sidebar.slider("Other OpEx target percent of revenue", 0.05, 0.30, 0.15, 0.01)
+    cogs_target_default = imported.get("cogs_target", 0.34)
+    labor_target_default = imported.get("labor_target", 0.24)
+    occ_target_default = imported.get("occ_target", 0.10)
+    other_target_default = imported.get("other_target", 0.15)
+    
+    cogs_target = st.sidebar.slider("COGS target percent of revenue", 0.10, 0.60, cogs_target_default, 0.01)
+    labor_target = st.sidebar.slider("Labor target percent of revenue", 0.10, 0.50, labor_target_default, 0.01)
+    occ_target = st.sidebar.slider("Rent/occupancy target percent of revenue", 0.05, 0.25, occ_target_default, 0.01)
+    other_target = st.sidebar.slider("Other OpEx target percent of revenue", 0.05, 0.30, other_target_default, 0.01)
 
     st.sidebar.subheader("Recommended Headcount Calculator")
     st.sidebar.write("Enter store hours for each day of the week:")
-    store_hours_mon = st.sidebar.number_input("Monday hours", min_value=0.0, max_value=24.0, value=14.0, step=0.5)
-    store_hours_tue = st.sidebar.number_input("Tuesday hours", min_value=0.0, max_value=24.0, value=14.0, step=0.5)
-    store_hours_wed = st.sidebar.number_input("Wednesday hours", min_value=0.0, max_value=24.0, value=14.0, step=0.5)
-    store_hours_thu = st.sidebar.number_input("Thursday hours", min_value=0.0, max_value=24.0, value=14.0, step=0.5)
-    store_hours_fri = st.sidebar.number_input("Friday hours", min_value=0.0, max_value=24.0, value=17.0, step=0.5)
-    store_hours_sat = st.sidebar.number_input("Saturday hours", min_value=0.0, max_value=24.0, value=17.0, step=0.5)
-    store_hours_sun = st.sidebar.number_input("Sunday hours", min_value=0.0, max_value=24.0, value=14.0, step=0.5)
+    store_hours_mon_default = imported.get("store_hours_mon", 14.0)
+    store_hours_tue_default = imported.get("store_hours_tue", 14.0)
+    store_hours_wed_default = imported.get("store_hours_wed", 14.0)
+    store_hours_thu_default = imported.get("store_hours_thu", 14.0)
+    store_hours_fri_default = imported.get("store_hours_fri", 17.0)
+    store_hours_sat_default = imported.get("store_hours_sat", 17.0)
+    store_hours_sun_default = imported.get("store_hours_sun", 14.0)
+    
+    store_hours_mon = st.sidebar.number_input("Monday hours", min_value=0.0, max_value=24.0, value=store_hours_mon_default, step=0.5)
+    store_hours_tue = st.sidebar.number_input("Tuesday hours", min_value=0.0, max_value=24.0, value=store_hours_tue_default, step=0.5)
+    store_hours_wed = st.sidebar.number_input("Wednesday hours", min_value=0.0, max_value=24.0, value=store_hours_wed_default, step=0.5)
+    store_hours_thu = st.sidebar.number_input("Thursday hours", min_value=0.0, max_value=24.0, value=store_hours_thu_default, step=0.5)
+    store_hours_fri = st.sidebar.number_input("Friday hours", min_value=0.0, max_value=24.0, value=store_hours_fri_default, step=0.5)
+    store_hours_sat = st.sidebar.number_input("Saturday hours", min_value=0.0, max_value=24.0, value=store_hours_sat_default, step=0.5)
+    store_hours_sun = st.sidebar.number_input("Sunday hours", min_value=0.0, max_value=24.0, value=store_hours_sun_default, step=0.5)
     
     # Calculate total store hours per week
     total_store_hours_per_week = store_hours_mon + store_hours_tue + store_hours_wed + store_hours_thu + store_hours_fri + store_hours_sat + store_hours_sun
@@ -632,11 +853,12 @@ def main():
     )
     
     # Employees per shift input
+    employees_per_shift_default = imported.get("employees_per_shift", 4)
     employees_per_shift = st.sidebar.number_input(
         "Employees per shift",
         min_value=1,
         max_value=20,
-        value=4,
+        value=employees_per_shift_default,
         step=1,
         help="Number of employees needed at all times during store operating hours"
     )
@@ -662,13 +884,20 @@ def main():
     
     st.sidebar.subheader("Labor – Employee Headcount (Actual)")
     
-    # Initialize session state for actual_employees if not exists
+    # Initialize or update session state for actual_employees
     if 'actual_employees' not in st.session_state:
-        st.session_state.actual_employees = min_employees_calculated
+        # Use imported value if available, otherwise use calculated minimum
+        st.session_state.actual_employees = imported.get("actual_employees", min_employees_calculated)
+    elif imported.get("actual_employees") is not None:
+        # Update from imported values if available
+        st.session_state.actual_employees = imported.get("actual_employees")
     
-    # Initialize session state for hours_per_employee_week if not exists
+    # Initialize or update session state for hours_per_employee_week
     if 'hours_per_employee_week' not in st.session_state:
-        st.session_state.hours_per_employee_week = 34.0
+        st.session_state.hours_per_employee_week = imported.get("hours_per_employee_week", 34.0)
+    elif imported.get("hours_per_employee_week") is not None:
+        # Update from imported values if available
+        st.session_state.hours_per_employee_week = imported.get("hours_per_employee_week")
     
     # Button to sync actual headcount to calculated minimum
     if st.sidebar.button("Set to calculated minimum", use_container_width=True):
@@ -685,11 +914,14 @@ def main():
         help=f"One employee per shift = +/- headcount by {employees_per_shift}"
     )
     
+    hourly_rate_default = imported.get("hourly_rate", 18.0)
+    labor_burden_mult_default = imported.get("labor_burden_mult", 1.249)
+    
     hourly_rate = st.sidebar.slider(
-        "Base hourly wage ($/hr)", min_value=10.0, max_value=40.0, value=18.0, step=0.5
+        "Base hourly wage ($/hr)", min_value=10.0, max_value=40.0, value=hourly_rate_default, step=0.5
     )
     labor_burden_mult = st.sidebar.slider(
-        "Labor burden multiplier (taxes, benefits, etc.)", min_value=1.0, max_value=2.0, value=1.249, step=0.01
+        "Labor burden multiplier (taxes, benefits, etc.)", min_value=1.0, max_value=2.0, value=labor_burden_mult_default, step=0.01
     )
     hours_per_employee_week = st.sidebar.number_input(
         "Hours per employee per week", 
@@ -703,6 +935,41 @@ def main():
     
     # Use actual_employees for the labor floor calculation (keeping variable name for compatibility)
     min_employees = actual_employees
+
+    # ----- Export Settings (populate placeholder at top) -----
+    # Export all current values to JSON
+    export_json = export_all_values(
+        investment, num_investors, days_per_month, ticket, start_input_method,
+        start_orders, start_revenue, target_input_method, target_orders, target_revenue,
+        ramp_months, post_ramp_growth_type, post_ramp_growth_value, max_input_method,
+        max_daily_orders, max_revenue, ticket_infl, max_ticket_price,
+        cogs_pct, labor_pct, other_pct, cogs_infl, labor_infl, other_infl,
+        misc_expense_type, misc_expense_pct, misc_expense_fixed, misc_expense_infl,
+        rent_month_y1, rent_infl, cogs_target, labor_target, occ_target, other_target,
+        store_hours_mon, store_hours_tue, store_hours_wed, store_hours_thu,
+        store_hours_fri, store_hours_sat, store_hours_sun, employees_per_shift,
+        actual_employees, hourly_rate, labor_burden_mult, hours_per_employee_week
+    )
+    
+    # Create download button and populate the placeholder at the top
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"qsr_settings_{timestamp}.json"
+    
+    with export_placeholder.container():
+        st.subheader("💾 Export Current Settings")
+        st.download_button(
+            label="📥 Download Settings as JSON",
+            data=export_json,
+            file_name=filename,
+            mime="application/json",
+            use_container_width=True,
+            help="Download all current settings to a JSON file that can be imported later"
+        )
+    
+    # Clear imported values after first use to prevent re-applying on every rerun
+    if st.session_state.imported_values is not None:
+        st.session_state.imported_values = None
+        st.session_state.settings_imported = False
 
     # ----- Core 10-year projection using ramp + real rent + real labor -----
     df_5yr, payback_month_5yr, adjusted_investment_5yr, cumulative_losses_5yr = compute_5yr_projection(
