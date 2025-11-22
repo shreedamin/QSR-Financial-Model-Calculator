@@ -1402,8 +1402,8 @@ def main():
     # Build dictionary with data for each year
     comp_data = {
         "Metric": [
-            "Revenue (yearly)",
-            "Revenue (monthly)",
+            "Revenue (Yearly)",
+            "Revenue (Monthly)",
             "COGS",
             "Gross Profit",
             "Labor (Budgeted)",
@@ -1426,8 +1426,8 @@ def main():
             yearly_total_revenue = avg_revenue * 12  # Yearly total revenue
             rent_budgeted = avg_revenue * occ_target  # Target rent based on occupancy target %
             comp_data[f"Year {year}"] = [
-                avg_revenue,
                 yearly_total_revenue,
+                avg_revenue,
                 float(year_data["Avg COGS (Monthly)"].iloc[0]),
                 float(year_data["Avg Monthly Gross Profit"].iloc[0]),
                 float(year_data["Avg Labor (Target)"].iloc[0]),
@@ -1451,7 +1451,7 @@ def main():
         colors = [''] * len(row)
         
         # Find row indices (updated order)
-        # 0: Revenue (avg monthly), 1: Revenue (Yearly total), 2: COGS, 3: Gross Profit, 
+        # 0: Revenue (Yearly total), 1: Revenue (avg monthly), 2: COGS, 3: Gross Profit, 
         # 4: Labor (Budgeted), 5: Labor (Actual), 6: Other OpEx, 7: Rent (Budgeted), 
         # 8: Rent (Actual), 9: Net Profit
         
