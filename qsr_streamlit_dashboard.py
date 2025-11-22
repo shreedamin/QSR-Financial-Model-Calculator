@@ -998,14 +998,13 @@ def main():
     filename = f"qsr_settings_{timestamp}.json"
     
     with export_placeholder.container():
-        st.subheader("💾 Export Current Settings")
         st.download_button(
-            label="📥 Download Settings as JSON",
+            label="📥 Export inputted values",
             data=export_json,
             file_name=filename,
             mime="application/json",
             use_container_width=True,
-            help="Download all current settings to a JSON file that can be imported later"
+            help="Download all current values to a JSON file that can be imported later"
         )
     
     # Clear imported values after first use to prevent re-applying on every rerun
