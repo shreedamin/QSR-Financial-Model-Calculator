@@ -400,22 +400,6 @@ def main():
     # ----- Sidebar: Core Inputs -----
     st.sidebar.header("Core inputs")
 
-    st.sidebar.subheader("Performance targets (for color coding)")
-    st.sidebar.markdown(
-        "**Color key:**<br>"
-        "🟣 Purple = On target (±3%)<br>"
-        "🟢 Green = Below target (good)<br>"
-        "🔴 Red = Above target (bad)",
-        unsafe_allow_html=True
-    )
-    st.sidebar.caption(
-        "💡 We recommend setting these values to the values inputted below in section **Cost structure – year 1 (% of monthly revenue)**"
-    )
-    cogs_target = st.sidebar.slider("COGS target percent of revenue", 0.10, 0.60, 0.34, 0.01)
-    labor_target = st.sidebar.slider("Labor target percent of revenue", 0.10, 0.50, 0.24, 0.01)
-    occ_target = st.sidebar.slider("Rent/occupancy target percent of revenue", 0.05, 0.25, 0.10, 0.01)
-    other_target = st.sidebar.slider("Other OpEx target percent of revenue", 0.05, 0.30, 0.15, 0.01)
-
     # Ramp growth settings
     st.sidebar.subheader("Order growth – ramp + post-ramp")
     start_orders = st.sidebar.number_input(
@@ -524,6 +508,22 @@ def main():
     rent_infl = st.sidebar.slider(
         "Rent inflation (annual %)", min_value=0.0, max_value=0.10, value=0.03, step=0.005
     )
+
+    st.sidebar.subheader("Performance targets (for color coding)")
+    st.sidebar.markdown(
+        "**Color key:**<br>"
+        "🟣 Purple = On target (±3%)<br>"
+        "🟢 Green = Below target (good)<br>"
+        "🔴 Red = Above target (bad)",
+        unsafe_allow_html=True
+    )
+    st.sidebar.caption(
+        "💡 We recommend setting these values to the values inputted below in section **Cost structure – year 1 (% of monthly revenue)**"
+    )
+    cogs_target = st.sidebar.slider("COGS target percent of revenue", 0.10, 0.60, 0.34, 0.01)
+    labor_target = st.sidebar.slider("Labor target percent of revenue", 0.10, 0.50, 0.24, 0.01)
+    occ_target = st.sidebar.slider("Rent/occupancy target percent of revenue", 0.05, 0.25, 0.10, 0.01)
+    other_target = st.sidebar.slider("Other OpEx target percent of revenue", 0.05, 0.30, 0.15, 0.01)
 
     st.sidebar.subheader("Recommended headcount calculator")
     st.sidebar.write("Enter store hours for each day of the week:")
