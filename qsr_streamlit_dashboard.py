@@ -1156,16 +1156,16 @@ def main():
     )
     if payback_month_5yr is not None:
         if cumulative_losses_5yr > 0:
-            help_text = f"First month where cumulative profit exceeds adjusted investment (${investment:,.0f} initial + ${cumulative_losses_5yr:,.0f} cumulative losses = ${adjusted_investment_5yr:,.0f} total)."
+            help_text = f"First month where total cumulative profit exceeds adjusted total investment (${investment:,.0f} initial + ${cumulative_losses_5yr:,.0f} cumulative losses = ${adjusted_investment_5yr:,.0f} total). This is the total payback period for the entire business, not per investor."
         else:
-            help_text = f"First month where cumulative profit exceeds total investment (${investment:,.0f})."
+            help_text = f"First month where total cumulative profit exceeds total investment (${investment:,.0f}). This is the total payback period for the entire business, not per investor."
         col_inv4.metric(
-            "Payback (Months, ramp + real rent + real labor)",
+            "Payback (Months, total)",
             f"{payback_month_5yr:.1f}",
             help=help_text,
         )
     else:
-        col_inv4.metric("Payback (Months, ramp + real rent + real labor)", "N/A")
+        col_inv4.metric("Payback (Months, total)", "N/A")
         
             # Yearly average net revenue row (Years 1-4)
     col_y1, col_y2, col_y3, col_y4 = st.columns(4)
