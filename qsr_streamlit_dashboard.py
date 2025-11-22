@@ -1402,8 +1402,8 @@ def main():
     # Build dictionary with data for each year
     comp_data = {
         "Metric": [
-            "Revenue (monthly)",
             "Revenue (yearly)",
+            "Revenue (monthly)",
             "COGS",
             "Gross Profit",
             "Labor (Budgeted)",
