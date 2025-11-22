@@ -400,14 +400,69 @@ def main():
     # ----- Sidebar: Core Inputs -----
     st.sidebar.header("Core inputs")
 
+    # Ticket and days inputs (needed for order/revenue calculations)
+    days_per_month = st.sidebar.slider(
+        "Operating days per month", min_value=20, max_value=31, value=30
+    )
+    ticket = st.sidebar.slider(
+        "Base ticket ($ per order, year 1)", min_value=8.0, max_value=40.0, value=17.0, step=0.5
+    )
+
     # Ramp growth settings
     st.sidebar.subheader("Order growth – ramp + post-ramp")
-    start_orders = st.sidebar.number_input(
-        "Start daily orders (month 1)", min_value=0.0, max_value=500.0, value=75.0, step=5.0
+    
+    # Start value input method
+    start_input_method = st.sidebar.radio(
+        "Start value input method",
+        ["Daily Orders", "Starting Revenue ($/month)"],
+        index=0,
+        help="Choose whether to input starting daily orders or starting monthly revenue. The other value will be calculated."
     )
-    target_orders = st.sidebar.number_input(
-        "Target daily orders at ramp end", min_value=1.0, max_value=800.0, value=185.0, step=5.0
+    
+    if start_input_method == "Daily Orders":
+        start_orders = st.sidebar.number_input(
+            "Start daily orders (month 1)", min_value=0.0, max_value=500.0, value=75.0, step=5.0
+        )
+        # Calculate starting revenue from orders
+        start_revenue = start_orders * days_per_month * ticket
+        st.sidebar.info(f"**Calculated starting revenue:** ${start_revenue:,.0f}/month")
+    else:
+        start_revenue = st.sidebar.number_input(
+            "Starting revenue ($/month)", min_value=0.0, max_value=500000.0, value=38250.0, step=100.0
+        )
+        # Calculate starting orders from revenue
+        if ticket > 0 and days_per_month > 0:
+            start_orders = start_revenue / (days_per_month * ticket)
+        else:
+            start_orders = 0.0
+        st.sidebar.info(f"**Calculated start daily orders:** {start_orders:,.1f} orders/day")
+    
+    # Target value input method
+    target_input_method = st.sidebar.radio(
+        "Target value input method",
+        ["Daily Orders", "Target Revenue ($/month)"],
+        index=0,
+        help="Choose whether to input target daily orders or target monthly revenue. The other value will be calculated."
     )
+    
+    if target_input_method == "Daily Orders":
+        target_orders = st.sidebar.number_input(
+            "Target daily orders at ramp end", min_value=1.0, max_value=800.0, value=185.0, step=5.0
+        )
+        # Calculate target revenue from orders
+        target_revenue = target_orders * days_per_month * ticket
+        st.sidebar.info(f"**Calculated target revenue:** ${target_revenue:,.0f}/month")
+    else:
+        target_revenue = st.sidebar.number_input(
+            "Target revenue ($/month)", min_value=0.0, max_value=1000000.0, value=94350.0, step=100.0
+        )
+        # Calculate target orders from revenue
+        if ticket > 0 and days_per_month > 0:
+            target_orders = target_revenue / (days_per_month * ticket)
+        else:
+            target_orders = 0.0
+        st.sidebar.info(f"**Calculated target daily orders:** {target_orders:,.1f} orders/day")
+    
     ramp_months = st.sidebar.number_input(
         "Ramp duration (months)", min_value=1, max_value=120, value=24, step=1
     )
@@ -443,13 +498,6 @@ def main():
     
     max_daily_orders = st.sidebar.number_input(
         "Max daily orders cap", min_value=50.0, max_value=1000.0, value=300.0, step=10.0
-    )
-
-    days_per_month = st.sidebar.slider(
-        "Operating days per month", min_value=20, max_value=31, value=30
-    )
-    ticket = st.sidebar.slider(
-        "Base ticket ($ per order, year 1)", min_value=8.0, max_value=40.0, value=17.0, step=0.5
     )
     ticket_infl = st.sidebar.slider(
         "Ticket price inflation (annual %)", min_value=0.0, max_value=0.10, value=0.02, step=0.005
