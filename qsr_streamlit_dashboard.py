@@ -533,12 +533,27 @@ def main():
     # Get default values from imported values if available
     imported = st.session_state.imported_values or {}
     
-    # Helper function to safely get imported values (handles None)
-    def get_imported_value(key, default):
+    # Helper function to safely get imported values (handles None and invalid types)
+    def get_imported_value(key, default, min_val=None, max_val=None):
         if key not in imported:
             return default
         value = imported[key]
-        return default if value is None else value
+        if value is None:
+            return default
+        try:
+            # Convert to same type as default
+            if isinstance(default, int):
+                value = int(value)
+            elif isinstance(default, float):
+                value = float(value)
+            # Validate range if provided
+            if min_val is not None and value < min_val:
+                return default
+            if max_val is not None and value > max_val:
+                return default
+            return value
+        except (ValueError, TypeError):
+            return default
     
     investment_default = get_imported_value("investment", 250000.0)
     num_investors_default = int(get_imported_value("num_investors", 3))
@@ -554,8 +569,24 @@ def main():
     st.sidebar.subheader("Revenue Growth: Ramp + Post-Ramp")
     
     # Ticket and days inputs (needed for order/revenue calculations)
-    days_per_month_default = get_imported_value("days_per_month", 30)
-    ticket_default = get_imported_value("ticket", 17.0)
+    # Get days_per_month with validation - must be integer between 20-31
+    days_per_month_default_raw = get_imported_value("days_per_month", 30, min_val=20, max_val=31)
+    # Ensure it's an integer for the slider and within valid range
+    if days_per_month_default_raw is None:
+        days_per_month_default = 30
+    else:
+        try:
+            days_per_month_default = int(round(float(days_per_month_default_raw)))
+            # Clamp to valid range
+            days_per_month_default = max(20, min(31, days_per_month_default))
+        except (ValueError, TypeError, OverflowError):
+            days_per_month_default = 30
+    
+    ticket_default = get_imported_value("ticket", 17.0, min_val=8.0, max_val=40.0)
+    
+    # Ensure days_per_month_default is definitely a valid integer
+    if not isinstance(days_per_month_default, int) or days_per_month_default < 20 or days_per_month_default > 31:
+        days_per_month_default = 30
     
     days_per_month = st.sidebar.slider(
         "Operating days per month", min_value=20, max_value=31, value=days_per_month_default
