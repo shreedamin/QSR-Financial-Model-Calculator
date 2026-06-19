@@ -459,35 +459,33 @@ def import_all_values(json_str):
 
 
 def main():
-    st.title("Quick Service Restaurant Financial Model Calculator")
+    st.title("QSR Unit Economics & Financial Projection Model")
 
     st.write(
-        "All business metrics shown are **per month** or **per year** unless otherwise stated.\n\n"
-        "*Are you accessing this from a mobile browser? Use the menu button in the upper left to access the adjustment toolbar.*\n\n"
-        "**Key Features:**\n"
-        "- Revenue, COGS, labor, other OpEx, rent, profit and investor splits are **monthly**.\n"
-        "- Inflation inputs are **annual % increases** on ticket price, cost percentages, rent, and misc expenses.\n"
-        "- Daily orders ramp from a starting value to a target over a chosen number of months, "
-        "then continue to grow at a specified rate until a maximum daily order cap.\n"
-        "- Rent is modeled as a real monthly dollar amount with annual increases; occupancy % is Rent ÷ Revenue.\n"
-        "- **Misc monthly expenses** can be configured as either a percentage of revenue or a fixed dollar amount, "
-        "with annual inflation applied.\n"
-        "- **Recommended headcount calculator** helps determine minimum staffing needs based on store operating hours "
-        "and employees per shift (assumes 34 hours per employee per week).\n"
-        "- **Labor cost** is determined by your actual employee headcount (not a percentage target). "
-        "The percentage-of-revenue target is a budget guideline for maximum labor spending, but your actual labor cost is: actual employee headcount × hourly rate × burden multiplier × hours per employee per month.\n"
-        "- Ticket price inflates annually but is capped by a configurable **Max Ticket Price**.\n"
-        "- **Performance targets** for COGS, Labor, Occupancy (Rent) and Other OpEx are adjustable in the sidebar "
-        "and used for color coding. Net Profit is color-coded: green for positive, red for negative.\n"
-        "- **Payback calculation** accounts for cumulative losses: if the business operates at a loss in early years, "
-        "those losses are added to the initial investment to determine the true payback period (when cumulative profit "
-        "exceeds initial investment + cumulative losses).\n"
-        "- **Monthly Breakdown table** shows individual cost components (Rent, Labor, COGS, Other OpEx), order metrics "
-        "(Daily, Weekly, Monthly Orders), and financial metrics (Revenue, Net Revenue) for months 1-120."
+        "All financial metrics are reported on a **monthly** or **annual** basis unless otherwise noted.\n\n"
+        "*Mobile users: tap the menu button (upper left) to access the input panel.*\n\n"
+        "**Model Overview:**\n"
+        "- **Revenue projections** are based on average daily transaction (ADT) count × average check size × operating days per month.\n"
+        "- **Cost structure** includes Cost of Goods Sold (COGS), labor, other operating expenses, occupancy (rent), and miscellaneous expenses — all reported monthly.\n"
+        "- **Escalation assumptions** are applied annually to average check size, cost percentages, rent, and miscellaneous expenses.\n"
+        "- **Transaction volume ramp-up** models a linear growth from opening-day ADT to a stabilized target over a configurable period, "
+        "followed by continued growth (fixed or compounding) up to a maximum daily transaction cap.\n"
+        "- **Occupancy cost** is modeled as a fixed monthly rent with annual escalation; occupancy ratio = Rent ÷ Revenue.\n"
+        "- **Miscellaneous operating expenses** can be configured as a percentage of revenue or a fixed monthly amount, with annual escalation.\n"
+        "- **Staffing calculator** determines recommended headcount based on store operating hours and employees per shift "
+        "(assumes 34 hours per employee per week).\n"
+        "- **Labor cost** is driven by actual employee headcount × base hourly wage × payroll burden multiplier × hours per employee per month. "
+        "The labor-as-%-of-revenue target is a budget guideline, not a cost driver.\n"
+        "- **Average check size** escalates annually but is capped at a configurable maximum.\n"
+        "- **Performance benchmarks** for COGS, labor, occupancy, and other operating expenses are adjustable and used for variance color coding. "
+        "Net profit is color-coded green (positive) or red (negative).\n"
+        "- **Payback period** accounts for cumulative operating losses: if the unit operates at a loss during ramp-up, "
+        "those losses are added to the initial capital investment to determine the true payback period.\n"
+        "- **Monthly detail table** breaks out all cost components, transaction metrics, and profitability for months 1–120."
     )
 
     # ----- Sidebar: Export/Import -----
-    st.sidebar.header("💾 Export/Import Settings")
+    st.sidebar.header("💾 Export / Import Configuration")
     
     # Initialize session state for imported values
     if 'imported_values' not in st.session_state:
@@ -497,9 +495,9 @@ def main():
     
     # File uploader for import
     uploaded_file = st.sidebar.file_uploader(
-        "Import values from JSON file",
+        "Import configuration from JSON file",
         type=['json'],
-        help="Upload a previously exported JSON file to restore all settings",
+        help="Upload a previously exported JSON file to restore all model inputs",
         key="settings_uploader"
     )
     
@@ -510,7 +508,7 @@ def main():
             if imported_params:
                 st.session_state.imported_values = imported_params
                 st.session_state.settings_imported = True
-                st.sidebar.success("✅ Settings imported successfully! The page will refresh to apply changes.")
+                st.sidebar.success("✅ Configuration imported successfully! The page will refresh to apply changes.")
                 # Force a rerun to apply the imported values
                 st.rerun()
         except Exception as e:
@@ -526,9 +524,9 @@ def main():
     st.sidebar.markdown("---")
     
     # ----- Sidebar: Core Inputs -----
-    st.sidebar.header("Core inputs")
+    st.sidebar.header("Model Inputs")
 
-    st.sidebar.subheader("Investment & Investor Structure")
+    st.sidebar.subheader("Capital Investment & Ownership Structure")
     
     # Get default values from imported values if available
     imported = st.session_state.imported_values or {}
@@ -559,14 +557,14 @@ def main():
     num_investors_default = int(get_imported_value("num_investors", 3))
     
     investment = st.sidebar.number_input(
-        "Total investment ($)", min_value=50000.0, max_value=2000000.0, value=investment_default, step=25000.0
+        "Total capital investment ($)", min_value=50000.0, max_value=2000000.0, value=investment_default, step=25000.0
     )
     num_investors = st.sidebar.number_input(
-        "Number of investors (equal split)", min_value=1, max_value=10, value=num_investors_default, step=1
+        "Number of investors (equal equity split)", min_value=1, max_value=10, value=num_investors_default, step=1
     )
 
     # Ramp growth settings
-    st.sidebar.subheader("Revenue Growth: Ramp + Post-Ramp")
+    st.sidebar.subheader("Revenue Assumptions: Ramp-Up & Stabilized Growth")
     
     # Ticket and days inputs (needed for order/revenue calculations)
     # Get days_per_month with validation - must be integer between 20-31
@@ -592,7 +590,7 @@ def main():
         "Operating days per month", min_value=20, max_value=31, value=days_per_month_default
     )
     ticket = st.sidebar.slider(
-        "Base ticket ($ per order, year 1)", min_value=8.0, max_value=40.0, value=ticket_default, step=0.5
+        "Average check size ($ per transaction, Year 1)", min_value=8.0, max_value=40.0, value=ticket_default, step=0.5
     )
     
     # Start value input method
@@ -603,33 +601,31 @@ def main():
             start_input_method_default_idx = start_input_method_options.index(imported.get("start_input_method"))
         except ValueError:
             pass
-    
+
     start_input_method = st.sidebar.radio(
-        "Start value input method",
+        "Opening volume input method",
         start_input_method_options,
         index=start_input_method_default_idx,
-        help="Choose whether to input starting daily orders or starting monthly revenue. The other value will be calculated."
+        help="Choose whether to input opening-month average daily transactions (ADT) or opening monthly revenue. The other value will be calculated."
     )
-    
+
     if start_input_method == "Starting Orders":
         start_orders_default = get_imported_value("start_orders", 75.0)
         start_orders = st.sidebar.number_input(
-            "Start daily orders (month 1)", min_value=0.0, max_value=500.0, value=start_orders_default, step=5.0
+            "Opening ADT (avg. daily transactions, Month 1)", min_value=0.0, max_value=500.0, value=start_orders_default, step=5.0
         )
-        # Calculate starting revenue from orders
         start_revenue = start_orders * days_per_month * ticket
-        st.sidebar.info(f"**Calculated starting revenue:** ${start_revenue:,.0f}/month")
+        st.sidebar.info(f"**Calculated opening monthly revenue:** ${start_revenue:,.0f}/month")
     else:
         start_revenue_default = get_imported_value("start_revenue", 38250.0)
         start_revenue = st.sidebar.number_input(
-            "Starting revenue ($/month)", min_value=0.0, max_value=500000.0, value=start_revenue_default, step=100.0
+            "Opening monthly revenue ($)", min_value=0.0, max_value=500000.0, value=start_revenue_default, step=100.0
         )
-        # Calculate starting orders from revenue
         if ticket > 0 and days_per_month > 0:
             start_orders = start_revenue / (days_per_month * ticket)
         else:
             start_orders = 0.0
-        st.sidebar.info(f"**Calculated start daily orders:** {start_orders:,.1f} orders/day")
+        st.sidebar.info(f"**Calculated opening ADT:** {start_orders:,.1f} transactions/day")
     
     # Target value input method
     target_input_method_options = ["Target Orders", "Target Revenue ($/month)"]
@@ -639,37 +635,35 @@ def main():
             target_input_method_default_idx = target_input_method_options.index(imported.get("target_input_method"))
         except ValueError:
             pass
-    
+
     target_input_method = st.sidebar.radio(
-        "Target value input method",
+        "Stabilized volume input method",
         target_input_method_options,
         index=target_input_method_default_idx,
-        help="Choose whether to input target daily orders or target monthly revenue. The other value will be calculated."
+        help="Choose whether to input stabilized ADT or stabilized monthly revenue at end of ramp-up. The other value will be calculated."
     )
-    
+
     if target_input_method == "Target Orders":
         target_orders_default = get_imported_value("target_orders", 185.0)
         target_orders = st.sidebar.number_input(
-            "Target daily orders at ramp end", min_value=1.0, max_value=800.0, value=target_orders_default, step=5.0
+            "Stabilized ADT at end of ramp-up", min_value=1.0, max_value=800.0, value=target_orders_default, step=5.0
         )
-        # Calculate target revenue from orders
         target_revenue = target_orders * days_per_month * ticket
-        st.sidebar.info(f"**Calculated target revenue:** ${target_revenue:,.0f}/month")
+        st.sidebar.info(f"**Calculated stabilized monthly revenue:** ${target_revenue:,.0f}/month")
     else:
         target_revenue_default = get_imported_value("target_revenue", 94350.0)
         target_revenue = st.sidebar.number_input(
-            "Target revenue ($/month)", min_value=0.0, max_value=1000000.0, value=target_revenue_default, step=100.0
+            "Stabilized monthly revenue ($)", min_value=0.0, max_value=1000000.0, value=target_revenue_default, step=100.0
         )
-        # Calculate target orders from revenue
         if ticket > 0 and days_per_month > 0:
             target_orders = target_revenue / (days_per_month * ticket)
         else:
             target_orders = 0.0
-        st.sidebar.info(f"**Calculated target daily orders:** {target_orders:,.1f} orders/day")
+        st.sidebar.info(f"**Calculated stabilized ADT:** {target_orders:,.1f} transactions/day")
     
     ramp_months_default = int(get_imported_value("ramp_months", 24))
     ramp_months = st.sidebar.number_input(
-        "Ramp duration (months)", min_value=1, max_value=120, value=ramp_months_default, step=1
+        "Ramp-up period (months)", min_value=1, max_value=120, value=ramp_months_default, step=1
     )
     
     # Post-ramp growth type selection
@@ -682,10 +676,10 @@ def main():
             post_ramp_growth_type_default_idx = 1
     
     post_ramp_growth_type = st.sidebar.radio(
-        "Post-ramp growth type",
+        "Post-stabilization growth type",
         post_ramp_growth_type_options,
         index=post_ramp_growth_type_default_idx,
-        help="Choose whether post-ramp growth is a fixed number of orders per month or an annual percentage growth rate."
+        help="Choose whether post-ramp-up transaction growth is a fixed number of additional daily transactions per month or an annual compounding percentage (same-store sales growth)."
     )
     
     # Handle post_ramp_growth_value - it might be None in the import
@@ -696,7 +690,7 @@ def main():
     if post_ramp_growth_type == "Fixed orders per month":
         post_ramp_growth_value_default = post_ramp_growth_value_imported if post_ramp_growth_value_imported is not None else 10.0
         post_ramp_growth_value = st.sidebar.slider(
-            "Post-ramp growth (additional daily orders per month)", 
+            "Post-stabilization growth (additional daily transactions/month)",
             min_value=0.0, 
             max_value=20.0, 
             value=post_ramp_growth_value_default, 
@@ -709,12 +703,12 @@ def main():
         else:
             post_ramp_growth_pct_default = 20.0
         post_ramp_growth_pct = st.sidebar.slider(
-            "Post-ramp growth (annual %)", 
-            min_value=0.0, 
-            max_value=100.0, 
-            value=post_ramp_growth_pct_default, 
+            "Same-store sales growth (annual %)",
+            min_value=0.0,
+            max_value=100.0,
+            value=post_ramp_growth_pct_default,
             step=0.5,
-            help="Annual percentage growth rate (e.g., 20% = 20.0). This will compound monthly."
+            help="Annual same-store sales growth rate applied post-stabilization (e.g., 20% = 20.0). Compounds monthly."
         )
         # Convert percentage to decimal (20% -> 0.20)
         post_ramp_growth_value = post_ramp_growth_pct / 100.0
@@ -729,60 +723,58 @@ def main():
             pass
     
     max_input_method = st.sidebar.radio(
-        "Max cap input method",
+        "Capacity cap input method",
         max_input_method_options,
         index=max_input_method_default_idx,
-        help="Choose whether to input max daily orders or max monthly revenue. The other value will be calculated."
+        help="Choose whether to input maximum ADT capacity or maximum monthly revenue capacity. The other value will be calculated."
     )
-    
+
     if max_input_method == "Max Orders":
         max_daily_orders_default = get_imported_value("max_daily_orders", 300.0)
         max_daily_orders = st.sidebar.number_input(
-            "Max daily orders cap", min_value=50.0, max_value=1000.0, value=max_daily_orders_default, step=10.0
+            "Maximum ADT capacity", min_value=50.0, max_value=1000.0, value=max_daily_orders_default, step=10.0
         )
-        # Calculate max revenue from orders
         max_revenue = max_daily_orders * days_per_month * ticket
-        st.sidebar.info(f"**Calculated max revenue:** ${max_revenue:,.0f}/month")
+        st.sidebar.info(f"**Calculated max monthly revenue:** ${max_revenue:,.0f}/month")
     else:
         max_revenue_default = get_imported_value("max_revenue", 153000.0)
         max_revenue = st.sidebar.number_input(
-            "Max revenue ($/month)", min_value=0.0, max_value=2000000.0, value=max_revenue_default, step=100.0
+            "Maximum monthly revenue capacity ($)", min_value=0.0, max_value=2000000.0, value=max_revenue_default, step=100.0
         )
-        # Calculate max orders from revenue
         if ticket > 0 and days_per_month > 0:
             max_daily_orders = max_revenue / (days_per_month * ticket)
         else:
             max_daily_orders = 0.0
-        st.sidebar.info(f"**Calculated max daily orders:** {max_daily_orders:,.1f} orders/day")
+        st.sidebar.info(f"**Calculated max ADT:** {max_daily_orders:,.1f} transactions/day")
     
     ticket_infl_default = get_imported_value("ticket_infl", 0.02)
     ticket_infl = st.sidebar.slider(
-        "Ticket price inflation (annual %)", min_value=0.0, max_value=0.10, value=ticket_infl_default, step=0.005
+        "Average check escalation (annual %)", min_value=0.0, max_value=0.10, value=ticket_infl_default, step=0.005
     )
     max_ticket_price_default = get_imported_value("max_ticket_price", 34.0)
     max_ticket_price = st.sidebar.number_input(
-        "Max ticket price ($)", min_value=10.0, max_value=100.0, value=max_ticket_price_default, step=1.0
+        "Maximum average check size ($)", min_value=10.0, max_value=100.0, value=max_ticket_price_default, step=1.0
     )
 
-    st.sidebar.subheader("Cost Structure – Year 1 (% of monthly revenue)")
+    st.sidebar.subheader("Cost Structure — Year 1 (% of Revenue)")
     cogs_pct_default = get_imported_value("cogs_pct", 0.34)
     labor_pct_default = get_imported_value("labor_pct", 0.24)
     other_pct_default = get_imported_value("other_pct", 0.15)
-    
-    cogs_pct = st.sidebar.slider("COGS % of revenue", 0.20, 0.60, cogs_pct_default, 0.01)
-    labor_pct = st.sidebar.slider("Labor % target of revenue", 0.10, 0.50, labor_pct_default, 0.01)
-    other_pct = st.sidebar.slider("Other OpEx % of revenue", 0.05, 0.30, other_pct_default, 0.01)
-    
-    st.sidebar.subheader("Annual inflation on cost percentages")
+
+    cogs_pct = st.sidebar.slider("COGS (Food & Paper) % of revenue", 0.20, 0.60, cogs_pct_default, 0.01)
+    labor_pct = st.sidebar.slider("Labor budget target (% of revenue)", 0.10, 0.50, labor_pct_default, 0.01)
+    other_pct = st.sidebar.slider("Other operating expenses (% of revenue)", 0.05, 0.30, other_pct_default, 0.01)
+
+    st.sidebar.subheader("Annual Cost Escalation")
     cogs_infl_default = get_imported_value("cogs_infl", 0.015)
     labor_infl_default = get_imported_value("labor_infl", 0.0)
     other_infl_default = get_imported_value("other_infl", 0.01)
+
+    cogs_infl = st.sidebar.slider("COGS escalation (annual %)", 0.0, 0.10, cogs_infl_default, 0.005)
+    labor_infl = st.sidebar.slider("Labor escalation (annual %)", 0.0, 0.10, labor_infl_default, 0.005)
+    other_infl = st.sidebar.slider("Other OpEx escalation (annual %)", 0.0, 0.10, other_infl_default, 0.005)
     
-    cogs_infl = st.sidebar.slider("COGS inflation (annual, % of COGS%)", 0.0, 0.10, cogs_infl_default, 0.005)
-    labor_infl = st.sidebar.slider("Labor inflation (annual, % of labor%)", 0.0, 0.10, labor_infl_default, 0.005)
-    other_infl = st.sidebar.slider("Other OpEx inflation (annual, % of other%)", 0.0, 0.10, other_infl_default, 0.005)
-    
-    st.sidebar.subheader("Misc monthly expenses")
+    st.sidebar.subheader("Miscellaneous Operating Expenses")
     misc_expense_type_options = ["Percentage of Revenue", "Fixed Dollar Amount"]
     misc_expense_type_default_idx = 0
     if imported.get("misc_expense_type"):
@@ -790,81 +782,81 @@ def main():
             misc_expense_type_default_idx = misc_expense_type_options.index(imported.get("misc_expense_type"))
         except ValueError:
             pass
-    
+
     misc_expense_type = st.sidebar.radio(
-        "Misc expense type",
+        "Miscellaneous expense method",
         misc_expense_type_options,
         index=misc_expense_type_default_idx,
-        help="Choose whether misc expenses are calculated as a percentage of revenue or a fixed monthly amount."
+        help="Choose whether miscellaneous operating expenses are calculated as a percentage of revenue or a fixed monthly amount."
     )
-    
+
     if misc_expense_type == "Percentage of Revenue":
         misc_expense_pct_default = get_imported_value("misc_expense_pct", 0.0)
         misc_expense_pct = st.sidebar.slider(
-            "Misc expenses % of revenue", 
-            min_value=0.0, 
-            max_value=0.20, 
-            value=misc_expense_pct_default, 
+            "Miscellaneous expenses (% of revenue)",
+            min_value=0.0,
+            max_value=0.20,
+            value=misc_expense_pct_default,
             step=0.005,
-            help="Misc expenses as a percentage of monthly revenue"
+            help="Miscellaneous operating expenses as a percentage of monthly revenue (e.g., marketing, supplies, technology)."
         )
         misc_expense_fixed = 0.0
     else:
         misc_expense_fixed_default = get_imported_value("misc_expense_fixed", 0.0)
         misc_expense_fixed = st.sidebar.number_input(
-            "Misc expenses fixed amount ($/month)",
+            "Miscellaneous expenses — fixed ($/month)",
             min_value=0.0,
             max_value=50000.0,
             value=misc_expense_fixed_default,
             step=100.0,
-            help="Fixed monthly misc expenses in dollars"
+            help="Fixed monthly miscellaneous operating expenses (e.g., marketing, supplies, technology)."
         )
         misc_expense_pct = 0.0
-    
+
     misc_expense_infl_default = get_imported_value("misc_expense_infl", 0.01)
     misc_expense_infl = st.sidebar.slider(
-        "Misc expenses inflation (annual %)", 
-        min_value=0.0, 
-        max_value=0.10, 
-        value=misc_expense_infl_default, 
+        "Miscellaneous expense escalation (annual %)",
+        min_value=0.0,
+        max_value=0.10,
+        value=misc_expense_infl_default,
         step=0.005,
-        help="Annual inflation rate for misc expenses"
+        help="Annual escalation rate for miscellaneous operating expenses."
     )
 
-    st.sidebar.subheader("Rent (occupancy) – Real Dollars")
+    st.sidebar.subheader("Occupancy Cost (Rent)")
     rent_month_y1_default = get_imported_value("rent_month_y1", 10500.0)
     rent_infl_default = get_imported_value("rent_infl", 0.03)
-    
+
     rent_month_y1 = st.sidebar.number_input(
-        "Monthly rent – year 1 ($)", min_value=2000.0, max_value=30000.0, value=rent_month_y1_default, step=500.0
+        "Base monthly rent — Year 1 ($)", min_value=2000.0, max_value=30000.0, value=rent_month_y1_default, step=500.0
     )
     rent_infl = st.sidebar.slider(
-        "Rent inflation (annual %)", min_value=0.0, max_value=0.10, value=rent_infl_default, step=0.005
+        "Rent escalation (annual %)", min_value=0.0, max_value=0.10, value=rent_infl_default, step=0.005
     )
 
-    st.sidebar.subheader("Performance Targets (For color coding)")
+    st.sidebar.subheader("Performance Benchmarks (Variance Color Coding)")
     st.sidebar.markdown(
-        "**Color key:**<br>"
-        "🟣 Purple = On target (±3%)<br>"
-        "🟢 Green = Below target (good)<br>"
-        "🔴 Red = Above target (bad)",
+        "**Variance indicators:**<br>"
+        "🟣 Purple = Within benchmark (±3 pp)<br>"
+        "🟢 Green = Favorable variance (below benchmark)<br>"
+        "🔴 Red = Unfavorable variance (above benchmark)",
         unsafe_allow_html=True
     )
     st.sidebar.caption(
-        "💡 We recommend setting these values to the values inputted above**"
+        "Recommended: set benchmarks to match the cost assumptions entered above."
     )
     cogs_target_default = get_imported_value("cogs_target", 0.34)
     labor_target_default = get_imported_value("labor_target", 0.24)
     occ_target_default = get_imported_value("occ_target", 0.10)
     other_target_default = get_imported_value("other_target", 0.15)
-    
-    cogs_target = st.sidebar.slider("COGS target percent of revenue", 0.10, 0.60, cogs_target_default, 0.01)
-    labor_target = st.sidebar.slider("Labor target percent of revenue", 0.10, 0.50, labor_target_default, 0.01)
-    occ_target = st.sidebar.slider("Rent/occupancy target percent of revenue", 0.05, 0.25, occ_target_default, 0.01)
-    other_target = st.sidebar.slider("Other OpEx target percent of revenue", 0.05, 0.30, other_target_default, 0.01)
 
-    st.sidebar.subheader("Recommended Headcount Calculator")
-    st.sidebar.write("Enter store hours for each day of the week:")
+    cogs_target = st.sidebar.slider("COGS benchmark (% of revenue)", 0.10, 0.60, cogs_target_default, 0.01)
+    labor_target = st.sidebar.slider("Labor benchmark (% of revenue)", 0.10, 0.50, labor_target_default, 0.01)
+    occ_target = st.sidebar.slider("Occupancy benchmark (% of revenue)", 0.05, 0.25, occ_target_default, 0.01)
+    other_target = st.sidebar.slider("Other OpEx benchmark (% of revenue)", 0.05, 0.30, other_target_default, 0.01)
+
+    st.sidebar.subheader("Staffing Requirements Calculator")
+    st.sidebar.write("Enter store operating hours for each day of the week:")
     store_hours_mon_default = get_imported_value("store_hours_mon", 14.0)
     store_hours_tue_default = get_imported_value("store_hours_tue", 14.0)
     store_hours_wed_default = get_imported_value("store_hours_wed", 14.0)
@@ -889,9 +881,9 @@ def main():
     
     # Display calculated store hours per week and per month
     st.sidebar.info(
-        f"**Calculated hours store will be open:**\n"
-        f"- Per week: {total_store_hours_per_week:,.1f} hours\n"
-        f"- Per month: {total_store_hours_per_month:,.1f} hours"
+        f"**Total operating hours:**\n"
+        f"- Weekly: {total_store_hours_per_week:,.1f} hours\n"
+        f"- Monthly: {total_store_hours_per_month:,.1f} hours"
     )
     
     # Employees per shift input
@@ -918,13 +910,13 @@ def main():
     
     # Display calculated minimum
     st.sidebar.info(
-        f"***Calculated recommended headcount:** {min_employees_calculated} employees\n\n"
-        f"****Total staffing-hours needed per month:**\n"
-        f"- Per week: {total_employee_hours_needed_per_week:,.1f} hours\n"
-        f"- Per month: {total_employee_hours_needed_per_month:,.1f} hours"
+        f"**Recommended minimum headcount:** {min_employees_calculated} FTEs\n\n"
+        f"**Total labor hours required:**\n"
+        f"- Weekly: {total_employee_hours_needed_per_week:,.1f} hours\n"
+        f"- Monthly: {total_employee_hours_needed_per_month:,.1f} hours"
     )
     
-    st.sidebar.subheader("Labor – Employee Headcount (Actual)")
+    st.sidebar.subheader("Labor — Actual Headcount & Wage Inputs")
     
     # Initialize or update session state for actual_employees
     if 'actual_employees' not in st.session_state:
@@ -942,12 +934,12 @@ def main():
         st.session_state.hours_per_employee_week = get_imported_value("hours_per_employee_week", 34.0)
     
     # Button to sync actual headcount to calculated minimum
-    if st.sidebar.button("Set to calculated minimum", use_container_width=True):
+    if st.sidebar.button("Set to recommended minimum", use_container_width=True):
         st.session_state.actual_employees = min_employees_calculated
-        st.session_state.hours_per_employee_week = 34.0  # Match the calculated minimum assumption
-    
+        st.session_state.hours_per_employee_week = 34.0
+
     actual_employees = st.sidebar.number_input(
-        "Actual employee headcount",
+        "Actual headcount (FTEs)",
         min_value=1,
         max_value=50, 
         value=st.session_state.actual_employees, 
@@ -963,7 +955,7 @@ def main():
         "Base hourly wage ($/hr)", min_value=10.0, max_value=40.0, value=hourly_rate_default, step=0.5
     )
     labor_burden_mult = st.sidebar.slider(
-        "Labor burden multiplier (taxes, benefits, etc.)", min_value=1.0, max_value=2.0, value=labor_burden_mult_default, step=0.01
+        "Payroll burden multiplier (FICA, workers' comp, benefits)", min_value=1.0, max_value=2.0, value=labor_burden_mult_default, step=0.01
     )
     hours_per_employee_week = st.sidebar.number_input(
         "Hours per employee per week", 
@@ -999,12 +991,12 @@ def main():
     
     with export_placeholder.container():
         st.download_button(
-            label="📥 Export inputted values",
+            label="📥 Export model inputs",
             data=export_json,
             file_name=filename,
             mime="application/json",
             use_container_width=True,
-            help="Download all current values to a JSON file that can be imported later"
+            help="Download all current model inputs to a JSON file that can be imported later"
         )
     
     # Clear imported values after first use to prevent re-applying on every rerun
@@ -1137,35 +1129,35 @@ def main():
 
     # ----- Top-level metrics -----
         # Investment breakdown
-    st.subheader("Investment breakdown")
+    st.subheader("Capital Investment Summary")
     col_inv1, col_inv2, col_inv3, col_inv4 = st.columns(4)
     col_inv1.metric(
-        "Initial investment",
+        "Initial capital investment",
         f"${investment:,.0f}",
-        help="Total initial investment amount."
+        help="Total initial capital investment (buildout, equipment, pre-opening costs)."
     )
     col_inv2.metric(
-        "Cumulative losses",
+        "Cumulative operating losses",
         f"${cumulative_losses_5yr:,.0f}",
-        help="Total cumulative losses (if any) during the projection period."
+        help="Total cumulative operating losses during the ramp-up period (if any)."
     )
     col_inv3.metric(
-        "Total to recoup",
+        "Total capital to recoup",
         f"${adjusted_investment_5yr:,.0f}",
-        help="Total amount to recoup (initial investment + cumulative losses)."
+        help="Total capital to recoup (initial investment + cumulative operating losses)."
     )
     if payback_month_5yr is not None:
         if cumulative_losses_5yr > 0:
-            help_text = f"First month where total cumulative profit exceeds adjusted total investment (${investment:,.0f} initial + ${cumulative_losses_5yr:,.0f} cumulative losses = ${adjusted_investment_5yr:,.0f} total). This is the total payback period for the entire business, not per investor."
+            help_text = f"First month where cumulative net profit exceeds adjusted total capital (${investment:,.0f} initial + ${cumulative_losses_5yr:,.0f} operating losses = ${adjusted_investment_5yr:,.0f} total). This is the unit-level payback period, not per investor."
         else:
-            help_text = f"First month where total cumulative profit exceeds total investment (${investment:,.0f}). This is the total payback period for the entire business, not per investor."
+            help_text = f"First month where cumulative net profit exceeds total capital investment (${investment:,.0f}). This is the unit-level payback period, not per investor."
         col_inv4.metric(
-            "Payback (Months, total)",
+            "Payback period (months)",
             f"{payback_month_5yr:.1f}",
             help=help_text,
         )
     else:
-        col_inv4.metric("Payback (Months, total)", "N/A")
+        col_inv4.metric("Payback period (months)", "N/A")
         
             # Yearly average net revenue row (Years 1-4)
     col_y1, col_y2, col_y3, col_y4 = st.columns(4)
@@ -1173,129 +1165,123 @@ def main():
     for year_num, col in zip([1, 2, 3, 4], [col_y1, col_y2, col_y3, col_y4]):
         year_data = df_year_summary[df_year_summary["Year"] == year_num]
         if not year_data.empty:
-            avg_net_revenue = float(year_data["Avg Monthly Net Profit"].iloc[0])
+            avg_net_profit = float(year_data["Avg Monthly Net Profit"].iloc[0])
             col.metric(
-                f"Year {year_num} avg net revenue ($ / month)",
-                f"${avg_net_revenue:,.0f}",
-                help=f"Average monthly net profit (Revenue - all costs) for Year {year_num}.",
+                f"Year {year_num} avg. net profit ($/month)",
+                f"${avg_net_profit:,.0f}",
+                help=f"Average monthly net operating income (revenue less all operating expenses) for Year {year_num}.",
             )
         else:
             col.metric(
-                f"Year {year_num} avg net revenue ($ / month)",
+                f"Year {year_num} avg. net profit ($/month)",
                 "N/A",
             )
     
     
-    st.subheader("Key monthly metrics")
-    
-    # Calculate monthly orders for all months
-    monthly_orders_m1 = float(row_m1["Daily Orders"]) * days_per_month
-    monthly_orders_m6 = float(row_m6["Daily Orders"]) * days_per_month
-    monthly_orders_m12 = float(row_m12["Daily Orders"]) * days_per_month
-    monthly_orders_m24 = float(row_m24["Daily Orders"]) * days_per_month
-    
-    # Organize by month columns: Month 1, Month 6, Month 12, Month 24
+    st.subheader("Key Monthly Unit Economics")
+
+    monthly_transactions_m1 = float(row_m1["Daily Orders"]) * days_per_month
+    monthly_transactions_m6 = float(row_m6["Daily Orders"]) * days_per_month
+    monthly_transactions_m12 = float(row_m12["Daily Orders"]) * days_per_month
+    monthly_transactions_m24 = float(row_m24["Daily Orders"]) * days_per_month
+
     col_m1, col_m6, col_m12, col_m24 = st.columns(4)
-    
-    # Month 1 column
+
     with col_m1:
         st.markdown("**Month 1**")
         st.metric(
-            "Occupancy ($ / month)",
+            "Occupancy cost ($/month)",
             f"${row_m1['Rent (Monthly)']:,.0f}",
-            help="Monthly rent (occupancy cost) in month 1.",
+            help="Monthly rent / occupancy cost in Month 1.",
         )
         st.metric(
-            "Revenue ($ / month)",
+            "Gross revenue ($/month)",
             f"${row_m1['Monthly Revenue']:,.0f}",
-            help="Monthly revenue in Month 1.",
+            help="Total monthly revenue (ADT × avg. check × operating days) in Month 1.",
         )
         st.metric(
-            "Monthly orders",
-            f"{monthly_orders_m1:,.0f}",
-            help="Total number of orders in Month 1 (Daily Orders × Operating Days).",
+            "Monthly transactions",
+            f"{monthly_transactions_m1:,.0f}",
+            help="Total transaction count in Month 1 (ADT × operating days).",
         )
         st.metric(
-            "Net revenue ($ / month)",
+            "Net profit ($/month)",
             f"${row_m1['Monthly Profit']:,.0f}",
-            help="Monthly net profit (Revenue - all costs) in Month 1.",
+            help="Net operating income (revenue less all operating expenses) in Month 1.",
         )
-    
-    # Month 6 column
+
     with col_m6:
         st.markdown("**Month 6**")
         st.metric(
-            "Occupancy ($ / month)",
+            "Occupancy cost ($/month)",
             f"${row_m6['Rent (Monthly)']:,.0f}",
-            help="Monthly rent (occupancy cost) in Month 6.",
+            help="Monthly rent / occupancy cost in Month 6.",
         )
         st.metric(
-            "Revenue ($ / month)",
+            "Gross revenue ($/month)",
             f"${row_m6['Monthly Revenue']:,.0f}",
-            help="Monthly revenue in Month 6.",
+            help="Total monthly revenue in Month 6.",
         )
         st.metric(
-            "Monthly orders",
-            f"{monthly_orders_m6:,.0f}",
-            help="Total number of orders in Month 6 (Daily Orders × Operating Days).",
+            "Monthly transactions",
+            f"{monthly_transactions_m6:,.0f}",
+            help="Total transaction count in Month 6 (ADT × operating days).",
         )
         st.metric(
-            "Net revenue ($ / month)",
+            "Net profit ($/month)",
             f"${row_m6['Monthly Profit']:,.0f}",
-            help="Monthly net profit (Revenue - all costs) in Month 6.",
+            help="Net operating income in Month 6.",
         )
-    
-    # Month 12 column
+
     with col_m12:
         st.markdown("**Month 12**")
         st.metric(
-            "Occupancy ($ / month)",
+            "Occupancy cost ($/month)",
             f"${row_m12['Rent (Monthly)']:,.0f}",
-            help="Monthly rent (occupancy cost) in Month 12.",
+            help="Monthly rent / occupancy cost in Month 12.",
         )
         st.metric(
-            "Revenue ($ / month)",
+            "Gross revenue ($/month)",
             f"${row_m12['Monthly Revenue']:,.0f}",
-            help="Monthly revenue in Month 12.",
+            help="Total monthly revenue in Month 12.",
         )
         st.metric(
-            "Monthly orders",
-            f"{monthly_orders_m12:,.0f}",
-            help="Total number of orders in Month 12 (Daily Orders × Operating Days).",
+            "Monthly transactions",
+            f"{monthly_transactions_m12:,.0f}",
+            help="Total transaction count in Month 12 (ADT × operating days).",
         )
         st.metric(
-            "Net revenue ($ / month)",
+            "Net profit ($/month)",
             f"${row_m12['Monthly Profit']:,.0f}",
-            help="Monthly net profit (Revenue - all costs) in Month 12.",
+            help="Net operating income in Month 12.",
         )
-    
-    # Month 24 column
+
     with col_m24:
         st.markdown("**Month 24**")
         st.metric(
-            "Occupancy ($ / month)",
+            "Occupancy cost ($/month)",
             f"${row_m24['Rent (Monthly)']:,.0f}",
-            help="Monthly rent (occupancy cost) in Month 24.",
+            help="Monthly rent / occupancy cost in Month 24.",
         )
         st.metric(
-            "Revenue ($ / month)",
+            "Gross revenue ($/month)",
             f"${row_m24['Monthly Revenue']:,.0f}",
-            help="Monthly revenue in Month 24.",
+            help="Total monthly revenue in Month 24.",
         )
         st.metric(
-            "Monthly orders",
-            f"{monthly_orders_m24:,.0f}",
-            help="Total number of orders in Month 24 (Daily Orders × Operating Days).",
+            "Monthly transactions",
+            f"{monthly_transactions_m24:,.0f}",
+            help="Total transaction count in Month 24 (ADT × operating days).",
         )
         st.metric(
-            "Net revenue ($ / month)",
+            "Net profit ($/month)",
             f"${row_m24['Monthly Profit']:,.0f}",
-            help="Monthly net profit (Revenue - all costs) in Month 24.",
+            help="Net operating income in Month 24.",
         )
     
     # ----- Labor Headcount & Comparison -----
     st.markdown("---")
-    st.subheader("Labor Headcount & Comparison")
+    st.subheader("Labor Analysis: Headcount & Cost Comparison")
     
     # Calculate Year 1 average labor budget (target) for affordability calculation
     # Use Labor (Target) - the percentage-based budget, not the actual spend
@@ -1331,31 +1317,30 @@ def main():
         headcount_color = "inverse"
     
     col_comp1.metric(
-        "Headcount comparison",
+        "Headcount vs. recommended",
         f"{actual_employees} actual vs {min_employees_calculated} recommended",
         headcount_status,
-        help=f"Actual employee headcount ({actual_employees}) compared to calculated minimum ({min_employees_calculated}) based on store hours."
+        help=f"Actual headcount ({actual_employees}) vs. recommended minimum ({min_employees_calculated}) based on operating hours and shift coverage requirements."
     )
-    
-    # Comparison 2: Total Hours Needed
+
     col_comp2.metric(
-        "Total hours needed (per week)",
+        "Total labor hours required (weekly)",
         f"{total_hours_needed_per_week:,.1f} hrs",
-        help=f"Total employee-hours needed per week to staff store with {employees_per_shift} employees at all times ({total_store_hours_per_week:.1f} store hours/week × {employees_per_shift} employees)."
+        help=f"Total labor hours required per week to maintain {employees_per_shift}-person shift coverage ({total_store_hours_per_week:.1f} operating hrs/week × {employees_per_shift} employees per shift)."
     )
     
     # Detailed breakdown
-    st.markdown("#### Detailed breakdown")
+    st.markdown("#### Detailed Staffing Breakdown")
     comparison_df = pd.DataFrame({
         "Metric": [
-            "Headcount per shift",
-            "Actual employee headcount",
-            "Calculated recommended headcount",
-            "Total store hours per week",
-            "Total staffing-hours needed per week",
-            "Total staffing-hours needed per Month",
-            "Total calculated employee cost needed per month per recommended headcount",
-            "Total actual employee cost per month per actual inputed headcount",
+            "Employees per shift",
+            "Actual headcount",
+            "Recommended minimum headcount",
+            "Total store operating hours / week",
+            "Total labor hours required / week",
+            "Total labor hours required / month",
+            "Fully-burdened labor cost / month (recommended headcount)",
+            "Fully-burdened labor cost / month (actual headcount)",
         ],
         "Value": [
             f"{employees_per_shift} employees",
@@ -1371,7 +1356,7 @@ def main():
     st.dataframe(comparison_df, use_container_width=True, hide_index=True)
     
     # Table showing months 1-120
-    st.markdown("### Monthly breakdown (months 1-120)")
+    st.markdown("### Monthly P&L Detail (Months 1–120)")
     months_1_120 = df_5yr[df_5yr["Month"] <= 120].copy()
     months_1_120["Monthly Orders"] = months_1_120["Daily Orders"] * days_per_month
     months_1_120["Weekly Orders"] = months_1_120["Daily Orders"] * 7
@@ -1397,21 +1382,21 @@ def main():
     )
 
     # Yearly cost breakdown table (Years 1-10)
-    st.markdown("### Yearly breakdown ($ / monthly avg for year)")
+    st.markdown("### Annual P&L Summary (Average Monthly by Year)")
     
     # Build dictionary with data for each year
     comp_data = {
         "Metric": [
-            "Revenue (Yearly)",
-            "Revenue (Monthly)",
-            "COGS",
+            "Annual Revenue",
+            "Avg. Monthly Revenue",
+            "COGS (Food & Paper)",
             "Gross Profit",
-            "Labor (Budgeted)",
+            "Labor (Budget Target)",
             "Labor (Actual)",
-            "Other OpEx",
-            "Rent (Budgeted)",
-            "Rent (Actual)",
-            "Net Profit",
+            "Other Operating Expenses",
+            "Occupancy (Budget Target)",
+            "Occupancy (Actual)",
+            "Net Operating Income",
         ]
     }
     
@@ -1530,7 +1515,7 @@ def main():
     
     # Add note about Other OpEx including Misc Expenses
     st.caption(
-        "💡 **Note:** Other OpEx includes Misc Monthly Expenses, Net Profit uses Labor and Rent actual "
+        "Other Operating Expenses includes miscellaneous operating expenses. Net Operating Income is calculated using actual labor and actual occupancy costs."
     )
 
     # Find first profitable year
@@ -1588,59 +1573,59 @@ def main():
     
     if first_profitable_year is not None:
         col_info1.success(
-            f"**First profitable year: Year {first_profitable_year}**\n\n"
-            f"Average monthly net profit becomes positive in Year {first_profitable_year}."
+            f"**Unit reaches profitability: Year {first_profitable_year}**\n\n"
+            f"Average monthly net operating income turns positive in Year {first_profitable_year}."
         )
     else:
         col_info1.warning(
-            "**First profitable year: Not within 10 years :(**\n\n"
-            "Average monthly net profit does not become positive within the 10-year projection."
+            "**Unit does not reach profitability within 10 years**\n\n"
+            "Average monthly net operating income does not turn positive within the 10-year projection."
         )
-    
+
     if first_year_afford_staffing is not None:
         col_info2.success(
-            f"**First year the business can afford full staffing: Year {first_year_afford_staffing}**\n\n"
-            f"Labor budget can cover full staffing cost (${full_staffing_cost_per_month:,.0f}/month) "
-            f"starting in Year {first_year_afford_staffing}."
+            f"**Full staffing sustainable: Year {first_year_afford_staffing}**\n\n"
+            f"Unit can support full shift coverage labor cost (${full_staffing_cost_per_month:,.0f}/month) "
+            f"while maintaining profitability starting in Year {first_year_afford_staffing}."
         )
     else:
         col_info2.warning(
-            f"**First year the business can afford full staffing: Not within 10 years :(**\n\n"
-            f"Labor budget cannot cover full staffing cost (${full_staffing_cost_per_month:,.0f}/month) "
-            f"within the 10-year projection."
+            f"**Full staffing not sustainable within 10 years**\n\n"
+            f"Unit cannot support full shift coverage labor cost (${full_staffing_cost_per_month:,.0f}/month) "
+            f"while maintaining profitability within the 10-year projection."
         )
-    
+
     if first_year_afford_staffing_plus_one is not None:
         col_info3.success(
-            f"**First year the business can afford to hire one additional employee per shift: Year {first_year_afford_staffing_plus_one}**\n\n"
-            f"Labor budget can cover full staffing plus one more employee per shift "
-            f"(${full_staffing_plus_one_cost_per_month:,.0f}/month, equals {extra_headcount_plus_one:.1f} extra employees) starting in Year {first_year_afford_staffing_plus_one}."
+            f"**Additional shift coverage sustainable: Year {first_year_afford_staffing_plus_one}**\n\n"
+            f"Unit can support full staffing plus one additional employee per shift "
+            f"(${full_staffing_plus_one_cost_per_month:,.0f}/month, +{extra_headcount_plus_one:.1f} FTEs) starting in Year {first_year_afford_staffing_plus_one}."
         )
     else:
         col_info3.warning(
-            f"**First year the business can afford to hire one additional employee per shift: Not within 10 years :(**\n\n"
-            f"Labor budget cannot cover full staffing plus one more employee "
+            f"**Additional shift coverage not sustainable within 10 years**\n\n"
+            f"Unit cannot support full staffing plus one additional employee per shift "
             f"(${full_staffing_plus_one_cost_per_month:,.0f}/month) within the 10-year projection."
         )
 
     # ----- Investor View – Year 1–10 metrics -----
-    st.markdown("### Investor view – average monthly profit splits (year 1)")
+    st.markdown("### Investor Returns — Average Monthly Profit Distribution (Year 1)")
 
     colg1, colg2, colg3 = st.columns(3)
     colg1.metric(
-        "Gross profit (avg monthly, year 1)",
+        "Gross profit (avg. monthly, Year 1)",
         f"${y1_avg_gross:,.0f}",
-        help="Average **monthly** gross profit (Revenue – COGS) in Year 1.",
+        help="Average monthly gross profit (Revenue – COGS) in Year 1.",
     )
     colg2.metric(
-        "Gross profit per investor (avg monthly, year 1)",
+        "Gross profit per investor (avg. monthly, Year 1)",
         f"${gross_per_investor_y1:,.0f}",
-        help="Average **monthly** gross profit per investor (equal split) in Year 1.",
+        help="Average monthly gross profit per investor (equal equity split) in Year 1.",
     )
     colg3.metric(
-        "Net profit per investor (avg monthly, year 1)",
+        "Net profit per investor (avg. monthly, Year 1)",
         f"${net_per_investor_y1:,.0f}",
-        help="Average **monthly** net profit (after all costs incl. rent and labor) per investor in Year 1.",
+        help="Average monthly net operating income per investor (after all operating expenses) in Year 1.",
     )
 
     # Years 1–5 summary blocks with color-coded metrics
@@ -1672,56 +1657,49 @@ def main():
         profit_emoji = profit_status_emoji(net_per_inv)
 
         # Wrap summary content in an expander to make it collapsible
-        with st.expander(f"Year {year_n} summary", expanded=False):
-            # Rent (always info)
-            st.info(f"🏠 Year {year_n} average rent: **${avg_rent:,.0f}/month**.")
+        with st.expander(f"Year {year_n} Performance Summary", expanded=False):
+            st.info(f"🏠 Year {year_n} avg. occupancy cost: **${avg_rent:,.0f}/month**.")
 
-            # Occupancy %
             if not np.isnan(avg_occ_pct):
                 st.info(
-                    f"{occ_emoji} Year {year_n} average occupancy: "
-                    f"**{avg_occ_pct*100:,.1f}%** vs target **{occ_target*100:,.1f}%**."
+                    f"{occ_emoji} Year {year_n} occupancy ratio: "
+                    f"**{avg_occ_pct*100:,.1f}%** vs benchmark **{occ_target*100:,.1f}%**."
                 )
             else:
-                st.info(f"{occ_emoji} Year {year_n} average occupancy: **N/A**.")
+                st.info(f"{occ_emoji} Year {year_n} occupancy ratio: **N/A**.")
 
-            # Labor %
             if not np.isnan(avg_labor_pct):
                 st.info(
-                    f"{labor_emoji} Year {year_n} average labor: "
-                    f"**{avg_labor_pct*100:,.1f}%** vs target **{labor_target*100:,.1f}%**."
+                    f"{labor_emoji} Year {year_n} labor ratio: "
+                    f"**{avg_labor_pct*100:,.1f}%** vs benchmark **{labor_target*100:,.1f}%**."
                 )
             else:
-                st.info(f"{labor_emoji} Year {year_n} average labor: **N/A**.")
+                st.info(f"{labor_emoji} Year {year_n} labor ratio: **N/A**.")
 
-            # COGS %
             if not np.isnan(cogs_pct_year):
                 st.info(
-                    f"{cogs_emoji} Year {year_n} average COGS: "
-                    f"**{cogs_pct_year*100:,.1f}%** vs target **{cogs_target*100:,.1f}%**."
+                    f"{cogs_emoji} Year {year_n} COGS ratio: "
+                    f"**{cogs_pct_year*100:,.1f}%** vs benchmark **{cogs_target*100:,.1f}%**."
                 )
             else:
-                st.info(f"{cogs_emoji} Year {year_n} average COGS: **N/A**.")
+                st.info(f"{cogs_emoji} Year {year_n} COGS ratio: **N/A**.")
 
-            # Other OpEx %
             if not np.isnan(other_pct_year):
                 st.info(
-                    f"{other_emoji} Year {year_n} average Other OpEx: "
-                    f"**{other_pct_year*100:,.1f}%** vs target **{other_target*100:,.1f}%**."
+                    f"{other_emoji} Year {year_n} other OpEx ratio: "
+                    f"**{other_pct_year*100:,.1f}%** vs benchmark **{other_target*100:,.1f}%**."
                 )
             else:
-                st.info(f"{other_emoji} Year {year_n} average Other OpEx: **N/A**.")
+                st.info(f"{other_emoji} Year {year_n} other OpEx ratio: **N/A**.")
 
-            # Net per investor
             st.info(
-                f"{profit_emoji} Year {year_n} net profit per investor (avg monthly): "
+                f"{profit_emoji} Year {year_n} net profit per investor (avg. monthly): "
                 f"**${net_per_inv:,.0f}**."
             )
 
-            # Story line
             st.info(
                 f"📈 In Year {year_n}, each investor averages **${net_per_inv:,.0f}/month net** "
-                f"on **{avg_daily_orders:,.1f} daily orders**."
+                f"on **{avg_daily_orders:,.1f} ADT**."
             )
 
     # Render Year 1–10 summary blocks under investor panels
@@ -1738,90 +1716,90 @@ def main():
         gross_per_inv = avg_gross / num_investors if num_investors > 0 else float("nan")
         net_per_inv = avg_net / num_investors if num_investors > 0 else float("nan")
 
-        st.markdown(f"### Investor view – average monthly profit splits (year {year_n})")
+        st.markdown(f"### Investor Returns — Average Monthly Profit Distribution (Year {year_n})")
         c1, c2, c3 = st.columns(3)
         c1.metric(
-            f"Gross profit (avg monthly, year {year_n})",
+            f"Gross profit (avg. monthly, Year {year_n})",
             f"${avg_gross:,.0f}",
-            help=f"Average **monthly** gross profit (Revenue – COGS) in Year {year_n}.",
+            help=f"Average monthly gross profit (Revenue – COGS) in Year {year_n}.",
         )
         c2.metric(
-            f"Gross profit per investor (avg monthly, year {year_n})",
+            f"Gross profit per investor (avg. monthly, Year {year_n})",
             f"${gross_per_inv:,.0f}",
-            help=f"Average **monthly** gross profit per investor (equal split) in Year {year_n}.",
+            help=f"Average monthly gross profit per investor (equal equity split) in Year {year_n}.",
         )
         c3.metric(
-            f"Net profit per investor (avg monthly, year {year_n})",
+            f"Net profit per investor (avg. monthly, Year {year_n})",
             f"${net_per_inv:,.0f}",
-            help=f"Average **monthly** net profit (after all costs incl. rent and labor) per investor in Year {year_n}.",
+            help=f"Average monthly net operating income per investor (after all operating expenses) in Year {year_n}.",
         )
 
         # Year summary block directly under this investor panel
         render_year_summary_block(year_n)
 
     st.caption(
-        "All profit and split numbers above are **per month**, not per year. "
-        "Rent is modeled as a fixed monthly dollar amount with annual inflation. "
-        "Labor cost (Labor Actual) is determined by your actual employee headcount. "
-        "Labor cost (Budgeted) is a budget guideline for maximum labor spending, but your actual labor cost is: actual employee headcount × hourly rate × burden multiplier × hours per employee per month. "
-        "Occupancy % is the target percentage of revenue to spend on rent/occupancy costs. "
-        "Color coding is based on your adjustable targets in the sidebar."
+        "All profit and distribution figures above are **monthly**, not annual. "
+        "Occupancy is modeled as a fixed monthly rent with annual escalation. "
+        "Labor (Actual) reflects fully-burdened cost based on actual headcount (headcount × hourly wage × payroll burden multiplier × hours/employee/month). "
+        "Labor (Budget Target) is a percentage-of-revenue guideline for budgeting purposes only. "
+        "Occupancy ratio represents rent as a percentage of revenue. "
+        "Variance color coding is based on the adjustable benchmarks in the sidebar."
     )
 
     # ----- Tabs -----
     tab1, tab2, tab3, tab4 = st.tabs(
         [
-            "Ramp & yearly view",
-            "10-year projection (monthly)",
-            "Order-level sensitivity (static)",
-            "Investor splits (yearly & monthly)",
+            "Ramp-Up & Annual View",
+            "10-Year Projection (Monthly)",
+            "Sensitivity Analysis (Static ADT)",
+            "Investor Distributions (Annual & Monthly)",
         ]
     )
 
     # ---- Tab 1: Ramp & Yearly View ----
     with tab1:
-        st.markdown("### Daily orders – ramp + post-ramp growth")
+        st.markdown("### Average Daily Transactions (ADT) — Ramp-Up & Growth Trajectory")
         fig_ramp, ax_ramp = plt.subplots()
         ax_ramp.plot(df_5yr["Month"], df_5yr["Daily Orders"])
         ax_ramp.set_xlabel("Month")
-        ax_ramp.set_ylabel("Daily orders")
-        ax_ramp.set_title("Daily orders over 10 years (ramp + post-ramp growth)")
+        ax_ramp.set_ylabel("Average Daily Transactions (ADT)")
+        ax_ramp.set_title("ADT Over 10 Years (Ramp-Up + Same-Store Growth)")
         st.pyplot(fig_ramp)
 
     # ---- Tab 2: 10-Year Projection (Monthly) ----
     with tab2:
-        st.markdown("### 10-year cumulative profit vs investment (monthly profit)")
+        st.markdown("### 10-Year Cumulative Net Profit vs. Capital Investment")
 
         if payback_month_5yr is not None:
             if cumulative_losses_5yr > 0:
                 st.write(
-                    f"Estimated **payback month**: **Month {payback_month_5yr}** "
+                    f"Estimated **payback period**: **Month {payback_month_5yr}** "
                     f"(~{payback_month_5yr/12:.1f} years).\n\n"
-                    f"**Investment breakdown:**\n"
-                    f"- Initial investment: ${investment:,.0f}\n"
-                    f"- Cumulative losses: ${cumulative_losses_5yr:,.0f}\n"
-                    f"- **Total to recoup: ${adjusted_investment_5yr:,.0f}**"
+                    f"**Capital recovery breakdown:**\n"
+                    f"- Initial capital investment: ${investment:,.0f}\n"
+                    f"- Cumulative operating losses: ${cumulative_losses_5yr:,.0f}\n"
+                    f"- **Total capital to recoup: ${adjusted_investment_5yr:,.0f}**"
                 )
             else:
                 st.write(
-                    f"Estimated **payback month**: **Month {payback_month_5yr}** "
+                    f"Estimated **payback period**: **Month {payback_month_5yr}** "
                     f"(~{payback_month_5yr/12:.1f} years)."
                 )
         else:
             st.write(
-                "Under the current assumptions, cumulative profit does **not** reach the total investment within 10 years."
+                "Under the current assumptions, cumulative net profit does **not** reach the total capital investment within 10 years."
             )
 
         fig_cum, ax_cum = plt.subplots()
-        ax_cum.plot(df_5yr["Month"], df_5yr["Cumulative Profit"], label="Cumulative profit")
-        ax_cum.plot(df_5yr["Month"], df_5yr["Investment"], label="Total investment")
+        ax_cum.plot(df_5yr["Month"], df_5yr["Cumulative Profit"], label="Cumulative Net Profit")
+        ax_cum.plot(df_5yr["Month"], df_5yr["Investment"], label="Total Capital Investment")
         ax_cum.set_xlabel("Month")
-        ax_cum.set_ylabel("Dollars")
-        ax_cum.set_title("Cumulative profit vs investment (10 years, monthly profit)")
+        ax_cum.set_ylabel("Dollars ($)")
+        ax_cum.set_title("Cumulative Net Profit vs. Capital Investment (10 Years)")
         ax_cum.legend()
         st.pyplot(fig_cum)
 
-        st.markdown("#### 10-year monthly table (all values are monthly)")
+        st.markdown("#### 10-Year Monthly Detail (All Values Monthly)")
 
         st.dataframe(
             df_5yr.style.format(
@@ -1845,9 +1823,9 @@ def main():
     # ---- Tab 3: Order-Level Sensitivity (Static) ----
     with tab3:
         st.markdown(
-            "### Static order sensitivity (no ramp)\n"
-            "This ignores the ramp and assumes a **constant** daily order level for 3 years.\n"
-            "It still applies ticket inflation (capped), rent inflation, cost inflation, and the labor floor vs % logic."
+            "### Static ADT Sensitivity Analysis (No Ramp-Up)\n"
+            "This analysis assumes a **constant** average daily transaction count for 3 years with no ramp-up period.\n"
+            "It applies average check escalation (capped), rent escalation, cost escalation, and actual headcount-based labor costing."
         )
 
         df_static = scenario_curve_static(
@@ -1875,12 +1853,12 @@ def main():
 
         fig_static, ax_static = plt.subplots()
         ax_static.plot(df_static["Daily Orders (Static)"], df_static["Payback (Months, Static)"])
-        ax_static.set_xlabel("Daily orders (static, no ramp)")
-        ax_static.set_ylabel("Payback (months)")
-        ax_static.set_title("Payback vs daily orders (static 3-year avg monthly profit)")
+        ax_static.set_xlabel("Average Daily Transactions (Static)")
+        ax_static.set_ylabel("Payback Period (Months)")
+        ax_static.set_title("Payback Period vs. ADT (3-Year Avg. Monthly Net Profit)")
         st.pyplot(fig_static)
 
-        with st.expander("Show static scenario table"):
+        with st.expander("Show sensitivity analysis table"):
             st.dataframe(
                 df_static.style.format(
                     {
@@ -1892,7 +1870,7 @@ def main():
 
     # ---- Tab 4: Investor Splits (Yearly & Monthly) ----
     with tab4:
-        st.markdown("### Average monthly investor splits by year – years 1–10")
+        st.markdown("### Average Monthly Investor Distributions by Year (Years 1–10)")
 
         st.dataframe(
             df_inv_year.style.format(
@@ -1914,9 +1892,9 @@ def main():
         )
 
         st.markdown("---")
-        st.markdown("### Investor splits by month (full 10 years, 120 rows)")
+        st.markdown("### Monthly Investor Distributions (Full 10-Year Detail)")
 
-        with st.expander("Show all 120 months (detailed per month)"):
+        with st.expander("Show all 120 months (detailed monthly view)"):
             st.dataframe(
                 df_inv_month[
                     [
@@ -1945,10 +1923,10 @@ def main():
                 )
             )
 
-        st.markdown("### Monthly investor splits by year")
+        st.markdown("### Monthly Investor Distributions by Year")
 
         for year in sorted(df_inv_month["Year"].unique()):
-            with st.expander(f"Year {year} – monthly investor splits"):
+            with st.expander(f"Year {year} — Monthly Investor Distributions"):
                 df_year = df_inv_month[df_inv_month["Year"] == year].copy()
                 st.dataframe(
                     df_year[
